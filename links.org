@@ -5,6 +5,8 @@ https://en.wikipedia.org/wiki/Curve#Jordan
 * Lean
 https://github.com/vaibhavkarve/leanteach2020/blob/master/src/euclid.lean
 https://wiki.illinois.edu/wiki/display/LT2020/Euclid%27s+axioms
+https://www.youtube.com/watch?v=K-kLck8BvDM
+https://github.com/Ja1941/hilberts-axioms/blob/master/src/incidence/basic.lean
 
 * Already published
 https://oquenosfazpensar.fil.puc-rio.br/index.php/oqnfp/article/view/802
