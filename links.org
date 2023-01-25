@@ -1,13 +1,23 @@
-* Background
+* Links
+** Background
 https://en.wikipedia.org/wiki/Mereology
 https://en.wikipedia.org/wiki/Curve#Jordan
 
-* Lean
+** Lean
 https://github.com/vaibhavkarve/leanteach2020/blob/master/src/euclid.lean
 https://wiki.illinois.edu/wiki/display/LT2020/Euclid%27s+axioms
 https://www.youtube.com/watch?v=K-kLck8BvDM
 https://github.com/Ja1941/hilberts-axioms/blob/master/src/incidence/basic.lean
 
-* Already published
+** Already published
 https://oquenosfazpensar.fil.puc-rio.br/index.php/oqnfp/article/view/802
 https://www.cambridge.org/core/journals/review-of-symbolic-logic/article/abs/de-zolts-postulate-an-abstract-approach/740479194321D18DE7FC0DE9168F8D02
+
+* Meetings
+** <2023-01-25 Wed>
+- [x] descobrir como abrir o envelope do PolySegment no construtor s₂
+  para pegar o outermost Segment
+  - não abre, só coloca o último (ou todos) segment como parâmetro do
+    tipo
+- como definir um predicado opaco?
+  - usar =opaque= parece funcionar…
