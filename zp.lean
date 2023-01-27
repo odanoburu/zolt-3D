@@ -21,7 +21,7 @@ structure Segment (p1 p2 : Point) : Type where
   p2 : Point
   neq : p1 ≠ p2
 
-theorem segment_comm : (s : Segment p1 p2) → Segment p2 p1
+theorem segment_comm : Segment p1 p2 → Segment p2 p1
   | {p1, p2, neq} => { p1 := p2, p2 := p1, neq := neq}
 
 opaque NotCollinear : Segment p q → Segment r s → Prop
@@ -41,54 +41,77 @@ axiom HasPointIntersection_comm : ∀ {p₁ q₁ p₂ q₂ : Point} {s₁ : Segm
 --         → ∃ r : Segment, r ∈ (init.fst :: init.snd :: segments)
 --           → HasPointIntersection s r ∧ NonCollinear s r
 
-inductive PolySegment : Segment p q → Type where
-| s₁ : (s : Segment _ _) → (r : Segment _ _) → NotCollinear s r → HasPointIntersection s r → PolySegment r
-| s₂ : (s : Segment _ _) → (ps : PolySegment r) → NotCollinear s r → HasPointIntersection s r → PolySegment s
+inductive PolySegment : Segment p₁ q₁ → Segment p₂ q₂ → Type where
+| s₁ : (s : Segment _ _) → PolySegment r r
+| s₂ : (ps₁ : PolySegment t s) → (ps₂ : PolySegment u r) → NotCollinear s r → HasPointIntersection s r
+     → PolySegment s r
 
--- theorem s₁_comm {s : Segment p₁ p₂ } {r : Segment q₁ q₂}
---   : (PolySegment.s₁ s r s_notcoll_r s_pointinter_r : PolySegment _) → PolySegment.s₁ r s _ _ := _
--- --   | {p1, p2, neq} => { p1 := p2, p2 := p1, neq := neq}
+theorem polysegment_comm : PolySegment s r → PolySegment r s
+  | PolySegment.s₁ s => PolySegment.s₁ s
+  | PolySegment.s₂ ps₁ ps₂ notcoll pointInter
+    => PolySegment.s₂ ps₂ ps₁ (NotCollinear_comm notcoll) (HasPointIntersection_comm pointInter)
 
 
-opaque IsJordan : PolySegment s → PolySegment r → Prop
+opaque IsJordan : PolySegment t s → PolySegment u r → Prop
 
--- couldn't a face just be a single polysegment that is
--- a jordan curve?
+axiom IsJordan_comm
+  : ∀ {p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ : Point}
+      {t : Segment p₁ q₁} {s : Segment p₂ q₂}
+      {u : Segment p₃ q₃} {r : Segment p₄ q₄}
+      {ps₁ : PolySegment t s} {ps₂ : PolySegment u r}
+  , IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
+
+-- couldn't a face just be a single polysegment that is a jordan
+-- curve?
 structure Face : Type where
-  s1 : PolySegment s
-  s2 : PolySegment r
-  jordan : @IsJordan _ _ s _ _ r s1 s2
+  s1 : PolySegment t s
+  s2 : PolySegment u r
+  jordan : @IsJordan _ _ t _ _ s _ _ u _ _ r s1 s2
 
 opaque HasLineIntersection : Face → Face → Prop
 
-inductive PolyFace : Face → Type where
-| f₁ : (f : Face)
-     → (g : Face)
-     → HasLineIntersection f q
-     → PolyFace g
-| f₂ : (pf : PolyFace f)
-     → (pg : PolyFace g)
-     → HasLineIntersection f g
-     → PolyFace g
+axiom HasLineIntersection_comm {f g : Face} :
+  HasLineIntersection f g → HasLineIntersection g f
 
-opaque IsClosed : PolyFace f → PolyFace g → Prop
+inductive PolyFace : Face → Face → Type where
+| f₁ : (f : Face) → PolyFace f f
+| f₂ : (pf : PolyFace h f)
+     → (pg : PolyFace i g)
+     → HasLineIntersection f g
+     → PolyFace f g
+
+theorem polyface_comm : PolyFace f g → PolyFace g f
+  | PolyFace.f₁ f => PolyFace.f₁ f
+  | PolyFace.f₂ pf₁ pf₂ lineInter
+    => PolyFace.f₂ pf₂ pf₁ (HasLineIntersection_comm lineInter)
+
+opaque IsClosed : PolyFace h f → PolyFace i g → Prop
+
+axiom IsClosed_comm {h f i g : Face}
+  {pf₁ : PolyFace h f} {pf₂ : PolyFace g i}
+  : IsClosed pf₁ pf₂  →  IsClosed pf₂ pf₁
 
 structure Volume : Type where
-  vol1 : PolyFace f
-  vol2 : PolyFace g
-  closed : @IsClosed f g vol1 vol2
+  vol1 : PolyFace h f
+  vol2 : PolyFace i g
+  closed : @IsClosed h f i g vol1 vol2
 
 opaque HasFaceIntersection : Volume → Volume → Prop
 
-inductive PolyVolume : Volume → Type where
-| v₁ : (p : Volume)
-     → (q : Volume)
-     → HasFaceIntersection p q
-     → PolyVolume q
-| v₂ : (pv : PolyVolume v)
-     → (pw : PolyVolume w)
-     → HasFaceIntersection v w
-     → PolyVolume w
+axiom HasFaceIntersection_comm {v u : Volume} :
+  HasFaceIntersection v u → HasFaceIntersection u v
+
+inductive PolyVolume : Volume → Volume → Type where
+| v₁ : (v : Volume) → PolyVolume v v
+| v₂ : (pv : PolyVolume w v)
+     → (pw : PolyVolume x u)
+     → HasFaceIntersection v u
+     → PolyVolume v u
+
+theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
+  | PolyVolume.v₁ v => PolyVolume.v₁ v
+  | PolyVolume.v₂ pv₁ pv₂ faceInter
+    => PolyVolume.v₂ pv₂ pv₁ (HasFaceIntersection_comm faceInter)
 
 -- inductive le : Nat → Nat → Prop
 -- | refl : ∀ {m}, le m m

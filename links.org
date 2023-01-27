@@ -1,3 +1,25 @@
+* Comments
+** Dependently-typing structures
+if we want to prove something like
+: theorem segment_comm : Segment p1 p2 → Segment p2 p1
+for Face & Volume we need to add their fields to the type (e.g.,
+~Volume f₁ f₂~ instead of just ~Volume~). But then we have the
+problems that we have with PolySegment-related predicates: instead of
+~IsJordan_comm~ being just
+#+begin_src lean4
+  axiom IsJordan_comm {ps₁ : PolySegment} {ps₂ : PolySegment}
+    : IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
+#+end_src
+it is
+#+begin_src lean4
+axiom IsJordan_comm
+  : ∀ {p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ : Point}
+      {t : Segment p₁ q₁} {s : Segment p₂ q₂}
+      {u : Segment p₃ q₃} {r : Segment p₄ q₄}
+      {ps₁ : PolySegment t s} {ps₂ : PolySegment u r}
+  , IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
+#+end_src
+
 * Links
 ** Background
 https://en.wikipedia.org/wiki/Mereology
@@ -21,3 +43,7 @@ https://www.cambridge.org/core/journals/review-of-symbolic-logic/article/abs/de-
     tipo
 - como definir um predicado opaco?
   - usar =opaque= parece funcionar…
+
+- pra definir $\frak{T}$ a melhor opção parece ser um tipo união, ou
+  então precisaremos de quebrar várias regras em 4 versões (oq não
+  necessariamente é tão ruim, mas é repetitivo)
