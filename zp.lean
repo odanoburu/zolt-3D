@@ -41,6 +41,9 @@ axiom HasPointIntersection_comm : ∀ {p₁ q₁ p₂ q₂ : Point} {s₁ : Segm
 --         → ∃ r : Segment, r ∈ (init.fst :: init.snd :: segments)
 --           → HasPointIntersection s r ∧ NonCollinear s r
 
+
+-- NOTE: I have already pointed this out, but do we really need
+-- NotCollinear? HasPointIntersection seems like it's enough for me…
 inductive PolySegment : Segment p₁ q₁ → Segment p₂ q₂ → Type where
 | s₁ : (s : Segment _ _) → PolySegment r r
 | s₂ : (ps₁ : PolySegment t s) → (ps₂ : PolySegment u r) → NotCollinear s r → HasPointIntersection s r
@@ -113,8 +116,19 @@ theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
   | PolyVolume.v₂ pv₁ pv₂ faceInter
     => PolyVolume.v₂ pv₂ pv₁ (HasFaceIntersection_comm faceInter)
 
--- inductive le : Nat → Nat → Prop
--- | refl : ∀ {m}, le m m
+inductive T : Type where
+| ε : T
+| P : Point → T
+| S : PolySegment _ _ → T
+| F : PolyFace _ _ → T
+| V : PolyVolume _ _ → T
+
+inductive cmp : T → T → Prop
+| cmp₀ : (s : Segment _ _) → cmp (T.P s.p1) (T.P s.p2)
+-- …
+inductive le : T → T → Prop
+| refl : ∀ {t}, le t t
+-- …
 -- | step : ∀ {m n}, le m n → le m (succ n)
 -- inductive Nat.le (n : Nat) : Nat → Prop
 --   /-- Less-equal is reflexive: `n ≤ n` -/
