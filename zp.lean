@@ -1,4 +1,4 @@
-section pairwise
+section sandbox
 variable (R : α → α → Prop)
 
 /-- `pairwise R l` means that all the elements with earlier indexes are
@@ -10,7 +10,19 @@ inductive pairwise : List α → Prop
 | nil : pairwise []
 | cons : ∀ {a : α} {l : List α}, (a' ∈ l → R a a') → pairwise l → pairwise (a :: l)
 
-end pairwise
+inductive AccTree : Nat → Type where
+| leaf : (n : Nat) → AccTree n
+| node : AccTree n → AccTree m → AccTree (Nat.add n m)
+
+def notLeaf : AccTree x → Bool
+| AccTree.leaf _ => False
+| AccTree.node _ _ => True
+
+-- def leftTree : (t : AccTree n + m) → notLeaf t = True  → AccTree n
+-- | AccTree.leaf l, notLeaf => _
+-- | AccTree.node l r, _ => l
+
+end sandbox
 
 namespace ZpInd
 
