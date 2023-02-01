@@ -61,6 +61,14 @@ def SegmentInfo.invert : SegmentInfo → SegmentInfo
 | SegmentInfo.single s => SegmentInfo.single s
 | SegmentInfo.composite s1 s2 => SegmentInfo.composite s2 s1
 
+def SegmentInfo.left : SegmentInfo → SegmentInfo
+| SegmentInfo.single si => SegmentInfo.single si
+| SegmentInfo.composite si _ => si
+
+def SegmentInfo.right : SegmentInfo → SegmentInfo
+| SegmentInfo.single si => SegmentInfo.single si
+| SegmentInfo.composite _ si => si
+
 def segmentTip : SegmentInfo → Segment r s
 | SegmentInfo.single s => s
 | SegmentInfo.composite _ si => segmentTip si
@@ -71,14 +79,6 @@ def segmentTip : SegmentInfo → Segment r s
 -- instance : DecidablePred SegmentInfo.IsComposite :=
 --   λ si => isTrue (match si with
 --                  | SegmentInfo.composite si₁ si₂ => SegmentInfo.IsComposite.compound si₁ si₂)
-
-def SegmentInfo.left : SegmentInfo → SegmentInfo
-| SegmentInfo.single s => SegmentInfo.single s
-| SegmentInfo.composite si _ => si
-
-def SegmentInfo.right : SegmentInfo → SegmentInfo
-| SegmentInfo.single s => SegmentInfo.single s
-| SegmentInfo.composite _ si => si
 
 
 -- NOTE: I have already pointed this out, but do we really need
@@ -95,17 +95,17 @@ def PolySegment.components
 : PolySegment si
 → Option (PolySegment (SegmentInfo.left si)
          × PolySegment (SegmentInfo.right si))
-| PolySegment.s₁ _ => none
+| PolySegment.s₁ __ => none
 | PolySegment.s₂ ps₁ ps₂ _ _ => some (ps₁, ps₂)
 
 def PolySegment.left
-: PolySegment (SegmentInfo.composite si _si)
-→ PolySegment si
+: PolySegment si
+→ PolySegment (SegmentInfo.left si)
 | PolySegment.s₂ ps _ _ _ => ps
 
 def PolySegment.right
-: PolySegment (SegmentInfo.composite _si si)
-→ PolySegment si
+: PolySegment si
+→ PolySegment (SegmentInfo.right si)
 | PolySegment.s₂ _ ps _ _ => ps
 
 def PolySegment.invert {si : SegmentInfo} : PolySegment si → PolySegment (SegmentInfo.invert si)
@@ -118,10 +118,9 @@ def PolySegment.invert {si : SegmentInfo} : PolySegment si → PolySegment (Segm
   | single _ => rfl
   | composite _ _ => rfl
 
-#check @Eq.subst
-theorem PolySegment.invert_symm {ps : PolySegment si}
-  : @Eq.subst _ PolySegment _ _ SegmentInfo.invert_symm (invert (invert ps)) = ps
-  := rfl
+-- theorem PolySegment.invert_symm {ps : PolySegment si}
+--   : @Eq.subst _ PolySegment _ _ SegmentInfo.invert_symm (invert (invert ps)) = ps
+--   := rfl
 
 opaque IsJordan : PolySegment si₁ → PolySegment si₂ → Prop
 
@@ -146,6 +145,14 @@ inductive FaceInfo where
 | single : Face → FaceInfo
 | composite : FaceInfo → FaceInfo → FaceInfo
 
+def FaceInfo.left : FaceInfo → FaceInfo
+| single f => single f
+| composite fi _ => fi
+
+def FaceInfo.right : FaceInfo → FaceInfo
+| single f => single f
+| composite _ fi => fi
+
 def FaceInfo.tip : FaceInfo → Face
 | FaceInfo.single f => f
 | FaceInfo.composite _ f => FaceInfo.tip f
@@ -158,13 +165,15 @@ inductive PolyFace : FaceInfo → Type where
      → PolyFace (FaceInfo.composite fi₁ fi₂)
 
 def PolyFace.left
-: PolyFace (FaceInfo.composite fi _fi)
-→ PolyFace fi
+: PolyFace fi
+→ PolyFace (FaceInfo.left fi)
+| f₁ f => f₁ f
 | PolyFace.f₂ ps _ _ => ps
 
 def PolyFace.right
-: PolyFace (FaceInfo.composite _fi fi)
-→ PolyFace fi
+: PolyFace fi
+→ PolyFace (FaceInfo.right fi)
+| f₁ f => f₁ f
 | PolyFace.f₂ _ ps _ => ps
 
 -- theorem polyface_comm : PolyFace fi → PolyFace g f
@@ -192,6 +201,14 @@ inductive VolumeInfo where
 | single : Volume → VolumeInfo
 | composite : VolumeInfo → VolumeInfo → VolumeInfo
 
+def VolumeInfo.left : VolumeInfo → VolumeInfo
+| single v => single v
+| composite vi _ => vi
+
+def VolumeInfo.right : VolumeInfo → VolumeInfo
+| single v => single v
+| composite _ vi => vi
+
 def VolumeInfo.tip : VolumeInfo → Volume
 | single v => v
 | composite _ vi => tip vi
@@ -204,13 +221,15 @@ inductive PolyVolume : VolumeInfo → Type where
      → PolyVolume (VolumeInfo.composite vi₁ vi₂)
 
 def PolyVolume.left
-: PolyVolume (VolumeInfo.composite vi _vi)
-→ PolyVolume vi
+: PolyVolume vi
+→ PolyVolume (VolumeInfo.left vi)
+| v₁ v => v₁ v
 | PolyVolume.v₂ pv _ _ => pv
 
 def PolyVolume.right
-: PolyVolume (VolumeInfo.composite _vi vi)
-→ PolyVolume vi
+: PolyVolume vi
+→ PolyVolume (VolumeInfo.right vi)
+| v₁ v => v₁ v
 | PolyVolume.v₂ _ pv _ => pv
 
 -- theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
@@ -224,30 +243,35 @@ inductive T : Type where
 | S : PolySegment _ → T
 | F : PolyFace _ → T
 | V : PolyVolume _ → T
+| join : T → T → T
 
 inductive cmp : T → T → Prop
 | cmp₀
-  : (s : PolySegment _ _) → cmp (T.P s.p1) (T.P s.p2)
+  : (s : Segment _ _) → cmp (T.P s.p1) (T.P s.p2)
 | cmp₁
-  : (ps : PolySegment (SegmentInfo.composite _ _))
+  : (ps : PolySegment si)
   → cmp (T.S (PolySegment.left ps)) (T.S (PolySegment.right ps))
 | cmp₂
-  : (pf : PolyFace (FaceInfo.composite _ _))
+  : (pf : PolyFace fi)
   → cmp (T.F <| PolyFace.left pf) (T.F <| PolyFace.right pf)
 | cmp₃
-  : (pv : PolyVolume (VolumeInfo.composite _ _))
+  : (pv : PolyVolume vi)
   → cmp (T.V <| PolyVolume.left pv) (T.V <| PolyVolume.right pv)
 open cmp
 
-inductive le : T → T → Prop
-| ε₀ : ∀ {t}, le t t
-| ε₁ : ∀ {p q : T}, cmp p q → q ≠ ε → le p _
--- …
--- | step : ∀ {m n}, le m n → le m (succ n)
--- inductive Nat.le (n : Nat) : Nat → Prop
---   /-- Less-equal is reflexive: `n ≤ n` -/
---   | refl     : Nat.le n n
---   /-- If `n ≤ m`, then `n ≤ m + 1`. -/
---   | step {m} : Nat.le n m → Nat.le n (succ m)
+mutual
+inductive T.le : T → T → Prop where
+| ε₀ {t : T} : le t t
+| le₁ : ∀ {p₁ q₁ p₂ q₂ : T}, le p₁ q₁ → le p₂ q₂
+      → le (join p₁ p₂) (join q₁ q₂)
+
+inductive T.lt : T → T → Prop
+| ε₁ : ∀ {p q : T}, cmp p q → q ≠ ε → lt p (join p q)
+| ε₂ : ∀ {p q : T}, cmp p q → p ≠ ε → lt q (join p q)
+| lt₁ : ∀ {p₁ q₁ p₂ q₂ : T}, lt p₁ q₁ → le p₂ q₂
+      → lt (join p₁ p₂) (join q₁ q₂)
+| lt₂ : ∀ {p₁ q₁ p₂ q₂ : T}, le p₁ q₁ → lt p₂ q₂
+      → lt (join p₁ p₂) (join q₁ q₂)
+end
 
 end ZpInd
