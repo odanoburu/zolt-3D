@@ -33,6 +33,13 @@ structure Segment (p1 p2 : Point) : Type where
   p2 : Point
   neq : p1 ≠ p2
 
+def Segment.invert : Segment p₁ p₂ → Segment p₂ p₁
+| s => {p1 := s.p2, p2 := s.p1, neq := s.neq}
+
+theorem Segment.invert_symm {s : Segment p q}
+  : invert (invert s) = s
+  := rfl
+
 theorem segment_comm : Segment p1 p2 → Segment p2 p1
   | {p1, p2, neq} => { p1 := p2, p2 := p1, neq := neq}
 
@@ -46,100 +53,195 @@ opaque HasPointIntersection : Segment p q → Segment r s → Prop
 axiom HasPointIntersection_comm : ∀ {p₁ q₁ p₂ q₂ : Point} {s₁ : Segment p₁ q₁} {s₂ : Segment p₂ q₂}
   , HasPointIntersection s₁ s₂ → HasPointIntersection s₂ s₁
 
--- structure PolySegment : Type where
---   init : Segment × Segment
---   more : List Segment
---   joint : ∀ {s : Segment}, s ∈ (init.fst :: init.snd :: segments)
---         → ∃ r : Segment, r ∈ (init.fst :: init.snd :: segments)
---           → HasPointIntersection s r ∧ NonCollinear s r
+inductive SegmentInfo : Type where
+| single : (s : Segment r s) → SegmentInfo
+| composite : SegmentInfo → SegmentInfo → SegmentInfo
+
+def SegmentInfo.invert : SegmentInfo → SegmentInfo
+| SegmentInfo.single s => SegmentInfo.single s
+| SegmentInfo.composite s1 s2 => SegmentInfo.composite s2 s1
+
+def segmentTip : SegmentInfo → Segment r s
+| SegmentInfo.single s => s
+| SegmentInfo.composite _ si => segmentTip si
+
+-- inductive SegmentInfo.IsComposite : SegmentInfo → Prop
+-- | compound (si₁ si₂ : SegmentInfo) : SegmentInfo.IsComposite (SegmentInfo.composite si₁ si₂)
+
+-- instance : DecidablePred SegmentInfo.IsComposite :=
+--   λ si => isTrue (match si with
+--                  | SegmentInfo.composite si₁ si₂ => SegmentInfo.IsComposite.compound si₁ si₂)
+
+def SegmentInfo.left : SegmentInfo → SegmentInfo
+| SegmentInfo.single s => SegmentInfo.single s
+| SegmentInfo.composite si _ => si
+
+def SegmentInfo.right : SegmentInfo → SegmentInfo
+| SegmentInfo.single s => SegmentInfo.single s
+| SegmentInfo.composite _ si => si
 
 
 -- NOTE: I have already pointed this out, but do we really need
 -- NotCollinear? HasPointIntersection seems like it's enough for me…
-inductive PolySegment : Segment p₁ q₁ → Segment p₂ q₂ → Type where
-| s₁ : (s : Segment _ _) → PolySegment r r
-| s₂ : (ps₁ : PolySegment t s) → (ps₂ : PolySegment u r) → NotCollinear s r → HasPointIntersection s r
-     → PolySegment s r
+inductive PolySegment : SegmentInfo → Type where
+| s₁ : (s : Segment _ _) → PolySegment (SegmentInfo.single s)
+| s₂ : PolySegment si₁
+     → PolySegment si₂
+     → NotCollinear (segmentTip si₁) (segmentTip si₂)
+     → HasPointIntersection (segmentTip si₁) (segmentTip si₂)
+     → PolySegment (SegmentInfo.composite si₁ si₂)
 
-theorem polysegment_comm : PolySegment s r → PolySegment r s
-  | PolySegment.s₁ s => PolySegment.s₁ s
-  | PolySegment.s₂ ps₁ ps₂ notcoll pointInter
-    => PolySegment.s₂ ps₂ ps₁ (NotCollinear_comm notcoll) (HasPointIntersection_comm pointInter)
+def PolySegment.components
+: PolySegment si
+→ Option (PolySegment (SegmentInfo.left si)
+         × PolySegment (SegmentInfo.right si))
+| PolySegment.s₁ _ => none
+| PolySegment.s₂ ps₁ ps₂ _ _ => some (ps₁, ps₂)
 
+def PolySegment.left
+: PolySegment (SegmentInfo.composite si _si)
+→ PolySegment si
+| PolySegment.s₂ ps _ _ _ => ps
 
-opaque IsJordan : PolySegment t s → PolySegment u r → Prop
+def PolySegment.right
+: PolySegment (SegmentInfo.composite _si si)
+→ PolySegment si
+| PolySegment.s₂ _ ps _ _ => ps
+
+def PolySegment.invert {si : SegmentInfo} : PolySegment si → PolySegment (SegmentInfo.invert si)
+| PolySegment.s₁ s => PolySegment.s₁ s
+| PolySegment.s₂ ps₁ ps₂ notColl hasPointInter
+  => PolySegment.s₂ ps₂ ps₁ (NotCollinear_comm notColl) (HasPointIntersection_comm hasPointInter)
+
+@[simp] theorem SegmentInfo.invert_symm : invert (invert si) = si
+  := match si with
+  | single _ => rfl
+  | composite _ _ => rfl
+
+#check @Eq.subst
+theorem PolySegment.invert_symm {ps : PolySegment si}
+  : @Eq.subst _ PolySegment _ _ SegmentInfo.invert_symm (invert (invert ps)) = ps
+  := rfl
+
+opaque IsJordan : PolySegment si₁ → PolySegment si₂ → Prop
 
 axiom IsJordan_comm
-  : ∀ {p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ : Point}
-      {t : Segment p₁ q₁} {s : Segment p₂ q₂}
-      {u : Segment p₃ q₃} {r : Segment p₄ q₄}
-      {ps₁ : PolySegment t s} {ps₂ : PolySegment u r}
+  : ∀ {si₁ : SegmentInfo} {si₂ : SegmentInfo}
+      {ps₁ : PolySegment si₁} {ps₂ : PolySegment si₂}
   , IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
 
 -- couldn't a face just be a single polysegment that is a jordan
 -- curve?
 structure Face : Type where
-  s1 : PolySegment t s
-  s2 : PolySegment u r
-  jordan : @IsJordan _ _ t _ _ s _ _ u _ _ r s1 s2
+  s1 : PolySegment si₁
+  s2 : PolySegment si₂
+  jordan : @IsJordan si₁ si₂ s1 s2
 
 opaque HasLineIntersection : Face → Face → Prop
 
 axiom HasLineIntersection_comm {f g : Face} :
   HasLineIntersection f g → HasLineIntersection g f
 
-inductive PolyFace : Face → Face → Type where
-| f₁ : (f : Face) → PolyFace f f
-| f₂ : (pf : PolyFace h f)
-     → (pg : PolyFace i g)
-     → HasLineIntersection f g
-     → PolyFace f g
+inductive FaceInfo where
+| single : Face → FaceInfo
+| composite : FaceInfo → FaceInfo → FaceInfo
 
-theorem polyface_comm : PolyFace f g → PolyFace g f
-  | PolyFace.f₁ f => PolyFace.f₁ f
-  | PolyFace.f₂ pf₁ pf₂ lineInter
-    => PolyFace.f₂ pf₂ pf₁ (HasLineIntersection_comm lineInter)
+def FaceInfo.tip : FaceInfo → Face
+| FaceInfo.single f => f
+| FaceInfo.composite _ f => FaceInfo.tip f
 
-opaque IsClosed : PolyFace h f → PolyFace i g → Prop
+inductive PolyFace : FaceInfo → Type where
+| f₁ : (f : Face) → PolyFace (FaceInfo.single f)
+| f₂ : (pf : PolyFace fi₁)
+     → (pg : PolyFace fi₂)
+     → HasLineIntersection (FaceInfo.tip fi₁) (FaceInfo.tip fi₂)
+     → PolyFace (FaceInfo.composite fi₁ fi₂)
 
-axiom IsClosed_comm {h f i g : Face}
-  {pf₁ : PolyFace h f} {pf₂ : PolyFace g i}
+def PolyFace.left
+: PolyFace (FaceInfo.composite fi _fi)
+→ PolyFace fi
+| PolyFace.f₂ ps _ _ => ps
+
+def PolyFace.right
+: PolyFace (FaceInfo.composite _fi fi)
+→ PolyFace fi
+| PolyFace.f₂ _ ps _ => ps
+
+-- theorem polyface_comm : PolyFace fi → PolyFace g f
+--   | PolyFace.f₁ f => PolyFace.f₁ f
+--   | PolyFace.f₂ pf₁ pf₂ lineInter
+--     => PolyFace.f₂ pf₂ pf₁ (HasLineIntersection_comm lineInter)
+
+opaque IsClosed : PolyFace fi → PolyFace gi → Prop
+
+axiom IsClosed_comm {fi₁ fi₂ : FaceInfo}
+  {pf₁ : PolyFace fi₁} {pf₂ : PolyFace fi₂}
   : IsClosed pf₁ pf₂  →  IsClosed pf₂ pf₁
 
 structure Volume : Type where
-  vol1 : PolyFace h f
-  vol2 : PolyFace i g
-  closed : @IsClosed h f i g vol1 vol2
+  vol1 : PolyFace fi₁
+  vol2 : PolyFace fi₂
+  closed : @IsClosed fi₁ fi₂ vol1 vol2
 
 opaque HasFaceIntersection : Volume → Volume → Prop
 
 axiom HasFaceIntersection_comm {v u : Volume} :
   HasFaceIntersection v u → HasFaceIntersection u v
 
-inductive PolyVolume : Volume → Volume → Type where
-| v₁ : (v : Volume) → PolyVolume v v
-| v₂ : (pv : PolyVolume w v)
-     → (pw : PolyVolume x u)
-     → HasFaceIntersection v u
-     → PolyVolume v u
+inductive VolumeInfo where
+| single : Volume → VolumeInfo
+| composite : VolumeInfo → VolumeInfo → VolumeInfo
 
-theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
-  | PolyVolume.v₁ v => PolyVolume.v₁ v
-  | PolyVolume.v₂ pv₁ pv₂ faceInter
-    => PolyVolume.v₂ pv₂ pv₁ (HasFaceIntersection_comm faceInter)
+def VolumeInfo.tip : VolumeInfo → Volume
+| single v => v
+| composite _ vi => tip vi
+
+inductive PolyVolume : VolumeInfo → Type where
+| v₁ : (v : Volume) → PolyVolume (VolumeInfo.single v)
+| v₂ : (pv : PolyVolume vi₁)
+     → (pw : PolyVolume vi₂)
+     → HasFaceIntersection (VolumeInfo.tip v) (VolumeInfo.tip u)
+     → PolyVolume (VolumeInfo.composite vi₁ vi₂)
+
+def PolyVolume.left
+: PolyVolume (VolumeInfo.composite vi _vi)
+→ PolyVolume vi
+| PolyVolume.v₂ pv _ _ => pv
+
+def PolyVolume.right
+: PolyVolume (VolumeInfo.composite _vi vi)
+→ PolyVolume vi
+| PolyVolume.v₂ _ pv _ => pv
+
+-- theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
+--   | PolyVolume.v₁ v => PolyVolume.v₁ v
+--   | PolyVolume.v₂ pv₁ pv₂ faceInter
+--     => PolyVolume.v₂ pv₂ pv₁ (HasFaceIntersection_comm faceInter)
 
 inductive T : Type where
 | ε : T
 | P : Point → T
-| S : PolySegment _ _ → T
-| F : PolyFace _ _ → T
-| V : PolyVolume _ _ → T
+| S : PolySegment _ → T
+| F : PolyFace _ → T
+| V : PolyVolume _ → T
 
 inductive cmp : T → T → Prop
-| cmp₀ : (s : Segment _ _) → cmp (T.P s.p1) (T.P s.p2)
--- …
+| cmp₀
+  : (s : PolySegment _ _) → cmp (T.P s.p1) (T.P s.p2)
+| cmp₁
+  : (ps : PolySegment (SegmentInfo.composite _ _))
+  → cmp (T.S (PolySegment.left ps)) (T.S (PolySegment.right ps))
+| cmp₂
+  : (pf : PolyFace (FaceInfo.composite _ _))
+  → cmp (T.F <| PolyFace.left pf) (T.F <| PolyFace.right pf)
+| cmp₃
+  : (pv : PolyVolume (VolumeInfo.composite _ _))
+  → cmp (T.V <| PolyVolume.left pv) (T.V <| PolyVolume.right pv)
+open cmp
+
 inductive le : T → T → Prop
-| refl : ∀ {t}, le t t
+| ε₀ : ∀ {t}, le t t
+| ε₁ : ∀ {p q : T}, cmp p q → q ≠ ε → le p _
 -- …
 -- | step : ∀ {m n}, le m n → le m (succ n)
 -- inductive Nat.le (n : Nat) : Nat → Prop
