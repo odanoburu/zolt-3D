@@ -35,8 +35,10 @@ end sandbox
 namespace ZpInd
 
 class Zₚ (a : Type u) where
-  IsComposite : a → Prop
-  cmp {x : a} : IsComposite x → a × a
+  cmp : a → Prop
+  --WellFormed : a → Prop
+  left {x : a} : cmp x → a
+  right {x : a} : cmp x → a
   join : a → a → a
 
 structure Point : Type
@@ -235,41 +237,49 @@ def PolyVolume.IsComposite : PolyVolume → Prop
 | v₁ _ => False
 | v₂ _ _ => True
 
-def PolyVolume.cmp {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume × PolyVolume
-:= match pv with
-  | v₂ pv₁ pv₂ => (pv₁, pv₂)
+def PolyVolume.left {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
+  := match pv with
+  | v₂ pv₁ _ => pv₁
+
+def PolyVolume.right {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
+  := match pv with
+  | v₂ _ pv₁ => pv₁
+
+def PolyVolume.cmp {pv : PolyVolume} {_ : IsComposite pv} (l r : PolyVolume) : Prop
+  := v₂ l r = pv
 
 instance : Zₚ PolyVolume where
-  IsComposite := PolyVolume.IsComposite
-  cmp := PolyVolume.cmp
+  cmp := PolyVolume.IsComposite
+  left := PolyVolume.left
+  right := PolyVolume.right
   join := PolyVolume.v₂
 
 opaque PolyVolume.WellFormed : PolyVolume → Prop
 
-def PolyVolume.left
-: PolyVolume
-→ PolyVolume
-| v₁ v => v₁ v
-| PolyVolume.v₂ pv _ => pv
+-- def PolyVolume.left
+-- : PolyVolume
+-- → PolyVolume
+-- | v₁ v => v₁ v
+-- | PolyVolume.v₂ pv _ => pv
 
-def PolyVolume.right
-: PolyVolume
-→ PolyVolume
-| v₁ v => v₁ v
-| PolyVolume.v₂ _ pv => pv
+-- def PolyVolume.right
+-- : PolyVolume
+-- → PolyVolume
+-- | v₁ v => v₁ v
+-- | PolyVolume.v₂ _ pv => pv
 
-axiom PolyVolume.WellFormed_left {pv : PolyVolume}
-  : WellFormed pv → WellFormed (left pv)
-axiom PolyVolume.WellFormed_right {pv : PolyVolume}
-  : WellFormed pv → WellFormed (right pv)
+-- axiom PolyVolume.WellFormed_left {pv : PolyVolume}
+--   : WellFormed pv → WellFormed (left pv)
+-- axiom PolyVolume.WellFormed_right {pv : PolyVolume}
+--   : WellFormed pv → WellFormed (right pv)
 
-def PolyVolume.IsTruncationOf {pv₁ pv₂ : PolyVolume} (wf₁ : WellFormed pv₁) (wf₂ : WellFormed pv₂) : Prop
-  := match pv₁ with
-     | v₁ _ => False
-     | v₂ v u =>
-       match pv₂ with
-       | v₁ w => v = v₁ w ∨ u = v₁ w
-       | v₂ w _ => v = w ∧ IsTruncationOf (WellFormed_right wf₁) (WellFormed_right wf₂)
+-- def PolyVolume.IsTruncationOf {pv₁ pv₂ : PolyVolume} (wf₁ : WellFormed pv₁) (wf₂ : WellFormed pv₂) : Prop
+--   := match pv₁ with
+--      | v₁ _ => False
+--      | v₂ v u =>
+--        match pv₂ with
+--        | v₁ w => v = v₁ w ∨ u = v₁ w
+--        | v₂ w _ => v = w ∧ IsTruncationOf (WellFormed_right wf₁) (WellFormed_right wf₂)
 
 -- theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
 --   | PolyVolume.v₁ v => PolyVolume.v₁ v
@@ -284,19 +294,19 @@ inductive T : Type where
 | V : PolyVolume.WellFormed pv → T
 | join : T → T → T
 
-inductive cmp : T → T → Prop
-| cmp₀
-  : (s : Segment _ _) → cmp (T.P s.p1) (T.P s.p2)
-| cmp₁
-  : (ps : PolySegment si)
-  → cmp (T.S (PolySegment.left ps)) (T.S (PolySegment.right ps))
-| cmp₂
-  : (pf : PolyFace fi)
-  → cmp (T.F <| PolyFace.left pf) (T.F <| PolyFace.right pf)
-| cmp₃
-  : (wfpv : PolyVolume.WellFormed pv)
-  → cmp (T.V <| PolyVolume.WellFormed_left wfpv) (T.V <| PolyVolume.WellFormed_right wfpv)
-open cmp
+-- inductive cmp : T → T → Prop
+-- | cmp₀
+--   : (s : Segment _ _) → cmp (T.P s.p1) (T.P s.p2)
+-- | cmp₁
+--   : (ps : PolySegment si)
+--   → cmp (T.S (PolySegment.left ps)) (T.S (PolySegment.right ps))
+-- | cmp₂
+--   : (pf : PolyFace fi)
+--   → cmp (T.F <| PolyFace.left pf) (T.F <| PolyFace.right pf)
+-- | cmp₃
+--   : (wfpv : PolyVolume.WellFormed pv)
+--   → cmp (T.V <| PolyVolume.WellFormed_left wfpv) (T.V <| PolyVolume.WellFormed_right wfpv)
+-- open cmp
 
 mutual
 variable {t} [Zₚ t]
@@ -306,8 +316,8 @@ inductive le : t → t → Prop where
       → le (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
 
 inductive lt : t → t → Prop
-| ε₁ : ∀ {p q : t}, Zₚ.cmp p q → q ≠ ε → lt p (Zₚ.join p q)
-| ε₂ : ∀ {p q : t}, Zₚ.cmp p q → p ≠ ε → lt q (Zₚ.join p q)
+| ε₁ : ∀ {o : t}, (co : Zₚ.cmp o) → lt (Zₚ.left co) o
+| ε₂ : ∀ {c : t}, (co : Zₚ.cmp c) → lt (Zₚ.right co) c
 | lt₁ : ∀ {p₁ q₁ p₂ q₂ : t}, lt p₁ q₁ → le p₂ q₂
       → lt (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
 | lt₂ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → lt p₂ q₂
