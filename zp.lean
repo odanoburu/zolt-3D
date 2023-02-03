@@ -333,31 +333,27 @@ theorem PolyVolume.zolt {p q : PolyVolume}
   match p with
   | v₁ _ => False.elim isTrunc
   | v₂ u v =>
+    have uvc : Zₚ.cmp u v := sorry
     match q with
     | v₁ w =>
-      have c : Zₚ.cmp u v := sorry
       Or.elim isTrunc
         (λ he : u = v₁ w =>
-          have hc : Zₚ.cmp (v₁ w) v := Eq.subst (motive := λ α => Zₚ.cmp α v) he c
-          have joinv₂ : Zₚ.join (v₁ w) v hc = v₂ u v := sorry
-          have z : Zₚ.lt (v₁ w) (Zₚ.join (v₁ w) v hc) := Zₚ.lt.ε₁ (p := v₁ w) hc
-          Eq.subst joinv₂ z
-        )
+          have z : Zₚ.lt u (Zₚ.join u v uvc) := Zₚ.lt.ε₁ (p := u) uvc
+          have z' : Zₚ.lt u (v₂ u v) := Eq.subst rfl z
+          show Zₚ.lt (v₁ w) (v₂ u v) from Eq.subst (motive := λ α => Zₚ.lt α (v₂ u v)) he z')
         (λ he : v = v₁ w =>
-           have hc : Zₚ.cmp u (v₁ w) := Eq.subst he c
-           have joinv₂ : Zₚ.join u (v₁ w) hc = (v₂ u v) := sorry
-           have z := Zₚ.lt.ε₂ (p := u) hc
-           Eq.subst joinv₂ z
-           )
+           have z := Eq.subst rfl <| Zₚ.lt.ε₂ (q := v) uvc
+           Eq.subst (motive := λ α => Zₚ.lt α (v₂ u v)) he z)
     | v₂ w x =>
+      have wxc : Zₚ.cmp w x := sorry
       Or.elim isTrunc
         (λ h =>
           have hz := zolt h.right
           have he : Zₚ.le w u := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
-          Zₚ.lt.lt₂ he hz sorry sorry)
+          Zₚ.lt.lt₂ he hz wxc uvc)
         (λ h =>
           have hz : Zₚ.lt w u := zolt h.right
           have he : Zₚ.le x v := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
-          Zₚ.lt.lt₁ hz he sorry sorry)
+          Zₚ.lt.lt₁ hz he wxc uvc)
 
 end ZpInd
