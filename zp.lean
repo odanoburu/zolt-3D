@@ -35,11 +35,11 @@ end sandbox
 namespace ZpInd
 
 class Zₚ (a : Type u) where
-  cmp : a → Prop
+  cmp : a → a → Prop
   --WellFormed : a → Prop
-  left {x : a} : cmp x → a
-  right {x : a} : cmp x → a
-  join : a → a → a
+  -- left {x : a} : cmp x → a
+  -- right {x : a} : cmp x → a
+  join : (p : a) → (q : a) → cmp p q → a
 
 structure Point : Type
 
@@ -207,31 +207,31 @@ structure Volume : Type where
   vol2 : PolyFace fi₂
   closed : @IsClosed fi₁ fi₂ vol1 vol2
 
-opaque HasFaceIntersection : Volume → Volume → Prop
+-- inductive VolumeInfo where
+-- | single : Volume → VolumeInfo
+-- | composite : VolumeInfo → VolumeInfo → VolumeInfo
 
-axiom HasFaceIntersection_comm {v u : Volume} :
-  HasFaceIntersection v u → HasFaceIntersection u v
+-- def VolumeInfo.left : VolumeInfo → VolumeInfo
+-- | single v => single v
+-- | composite vi _ => vi
 
-inductive VolumeInfo where
-| single : Volume → VolumeInfo
-| composite : VolumeInfo → VolumeInfo → VolumeInfo
+-- def VolumeInfo.right : VolumeInfo → VolumeInfo
+-- | single v => single v
+-- | composite _ vi => vi
 
-def VolumeInfo.left : VolumeInfo → VolumeInfo
-| single v => single v
-| composite vi _ => vi
-
-def VolumeInfo.right : VolumeInfo → VolumeInfo
-| single v => single v
-| composite _ vi => vi
-
-def VolumeInfo.tip : VolumeInfo → Volume
-| single v => v
-| composite _ vi => tip vi
+-- def VolumeInfo.tip : VolumeInfo → Volume
+-- | single v => v
+-- | composite _ vi => tip vi
 
 inductive PolyVolume where
 | v₁ : (v : Volume) → PolyVolume
 | v₂ : (pv pw : PolyVolume)
      → PolyVolume
+
+opaque HasFaceIntersection : PolyVolume → PolyVolume → Prop
+
+axiom HasFaceIntersection_comm {v u : PolyVolume} :
+  HasFaceIntersection v u → HasFaceIntersection u v
 
 def PolyVolume.IsComposite : PolyVolume → Prop
 | v₁ _ => False
@@ -245,14 +245,16 @@ def PolyVolume.right {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
   := match pv with
   | v₂ _ pv₁ => pv₁
 
-def PolyVolume.cmp {pv : PolyVolume} {_ : IsComposite pv} (l r : PolyVolume) : Prop
-  := v₂ l r = pv
+-- def PolyVolume.cmp {pv : PolyVolume} {_ : IsComposite pv} (l r : PolyVolume) : Prop
+--   := v₂ l r = pv
+
+def PolyVolume.join : (p v : PolyVolume) → HasFaceIntersection p v
+  → PolyVolume
+| p, v, _ => v₂ p v
 
 instance : Zₚ PolyVolume where
-  cmp := PolyVolume.IsComposite
-  left := PolyVolume.left
-  right := PolyVolume.right
-  join := PolyVolume.v₂
+  cmp := HasFaceIntersection
+  join := PolyVolume.join
 
 opaque PolyVolume.WellFormed : PolyVolume → Prop
 
@@ -310,18 +312,21 @@ inductive T : Type where
 
 mutual
 variable {t} [Zₚ t]
-inductive le : t → t → Prop where
+inductive Zₚ.le : t → t → Prop where
 | ε₀ {p : t} : le p p
 | le₁ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → le p₂ q₂
-      → le (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
+      → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
+      → le (join p₁ p₂ pc) (join q₁ q₂ qc)
 
-inductive lt : t → t → Prop
-| ε₁ : ∀ {o : t}, (co : Zₚ.cmp o) → lt (Zₚ.left co) o
-| ε₂ : ∀ {c : t}, (co : Zₚ.cmp c) → lt (Zₚ.right co) c
+inductive Zₚ.lt : t → t → Prop
+| ε₁ : ∀ {p q : t}, (pqc : Zₚ.cmp p q) → lt p (join p q pqc)
+| ε₂ : ∀ {p q : t}, (pqc : cmp p q) → lt q (join p q pqc)
 | lt₁ : ∀ {p₁ q₁ p₂ q₂ : t}, lt p₁ q₁ → le p₂ q₂
-      → lt (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
+      → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
+      → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
 | lt₂ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → lt p₂ q₂
-      → lt (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
+      → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
+      → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
 end
 
 -- theorem T.zolt {pv₁ pv₂ : PolyVolume}
