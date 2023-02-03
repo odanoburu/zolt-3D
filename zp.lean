@@ -252,6 +252,12 @@ def PolyVolume.join : (p v : PolyVolume) → HasFaceIntersection p v
   → PolyVolume
 | p, v, _ => v₂ p v
 
+def PolyVolume.IsTruncationOf : PolyVolume → PolyVolume → Prop
+| v₁ _, _ => False
+| v₂ v u, v₁ w => v = v₁ w ∨ u = v₁ w
+| v₂ v u, v₂ w x => (v = w ∧ IsTruncationOf u x)
+                 ∨ (u = x ∧ IsTruncationOf v w)
+
 instance : Zₚ PolyVolume where
   cmp := HasFaceIntersection
   join := PolyVolume.join
@@ -274,14 +280,6 @@ opaque PolyVolume.WellFormed : PolyVolume → Prop
 --   : WellFormed pv → WellFormed (left pv)
 -- axiom PolyVolume.WellFormed_right {pv : PolyVolume}
 --   : WellFormed pv → WellFormed (right pv)
-
--- def PolyVolume.IsTruncationOf {pv₁ pv₂ : PolyVolume} (wf₁ : WellFormed pv₁) (wf₂ : WellFormed pv₂) : Prop
---   := match pv₁ with
---      | v₁ _ => False
---      | v₂ v u =>
---        match pv₂ with
---        | v₁ w => v = v₁ w ∨ u = v₁ w
---        | v₂ w _ => v = w ∧ IsTruncationOf (WellFormed_right wf₁) (WellFormed_right wf₂)
 
 -- theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
 --   | PolyVolume.v₁ v => PolyVolume.v₁ v
@@ -319,7 +317,7 @@ inductive Zₚ.le : t → t → Prop where
       → le (join p₁ p₂ pc) (join q₁ q₂ qc)
 
 inductive Zₚ.lt : t → t → Prop
-| ε₁ : ∀ {p q : t}, (pqc : Zₚ.cmp p q) → lt p (join p q pqc)
+| ε₁ : ∀ {p q : t}, (pqc : cmp p q) → lt p (join p q pqc)
 | ε₂ : ∀ {p q : t}, (pqc : cmp p q) → lt q (join p q pqc)
 | lt₁ : ∀ {p₁ q₁ p₂ q₂ : t}, lt p₁ q₁ → le p₂ q₂
       → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
@@ -329,18 +327,37 @@ inductive Zₚ.lt : t → t → Prop
       → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
 end
 
--- theorem T.zolt {pv₁ pv₂ : PolyVolume}
---   (wf₁ : PolyVolume.WellFormed pv₁)
---   (wf₂ : PolyVolume.WellFormed pv₂)
---   (isTrunc : PolyVolume.IsTruncationOf wf₁ wf₂)
---   : lt (V wf₂) (V wf₁) :=
---   match pv₁ with
---   | PolyVolume.v₁ _ => False.elim isTrunc
---   | PolyVolume.v₂ _ _ =>
---     match pv₂ with
---     | PolyVolume.v₁ w =>
---       Or.elim isTrunc (λ h => lt.ε₂ _ _) _
---     | PolyVolume.v₂ w x => _
-
+theorem PolyVolume.zolt {p q : PolyVolume}
+  (isTrunc : IsTruncationOf p q)
+  : Zₚ.lt q p :=
+  match p with
+  | v₁ _ => False.elim isTrunc
+  | v₂ u v =>
+    match q with
+    | v₁ w =>
+      have c : Zₚ.cmp u v := sorry
+      Or.elim isTrunc
+        (λ he : u = v₁ w =>
+          have hc : Zₚ.cmp (v₁ w) v := Eq.subst (motive := λ α => Zₚ.cmp α v) he c
+          have joinv₂ : Zₚ.join (v₁ w) v hc = v₂ u v := sorry
+          have z : Zₚ.lt (v₁ w) (Zₚ.join (v₁ w) v hc) := Zₚ.lt.ε₁ (p := v₁ w) hc
+          Eq.subst joinv₂ z
+        )
+        (λ he : v = v₁ w =>
+           have hc : Zₚ.cmp u (v₁ w) := Eq.subst he c
+           have joinv₂ : Zₚ.join u (v₁ w) hc = (v₂ u v) := sorry
+           have z := Zₚ.lt.ε₂ (p := u) hc
+           Eq.subst joinv₂ z
+           )
+    | v₂ w x =>
+      Or.elim isTrunc
+        (λ h =>
+          have hz := zolt h.right
+          have he : Zₚ.le w u := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
+          Zₚ.lt.lt₂ he hz sorry sorry)
+        (λ h =>
+          have hz : Zₚ.lt w u := zolt h.right
+          have he : Zₚ.le x v := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
+          Zₚ.lt.lt₁ hz he sorry sorry)
 
 end ZpInd
