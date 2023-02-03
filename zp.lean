@@ -1,6 +1,5 @@
 section sandbox
 variable (R : α → α → Prop)
-
 /-- `pairwise R l` means that all the elements with earlier indexes are
   `R`-related to all the elements with later indexes.
      pairwise R [1, 2, 3] ↔ R 1 2 ∧ R 1 3 ∧ R 2 3
@@ -18,6 +17,15 @@ def notLeaf : AccTree x → Bool
 | AccTree.leaf _ => False
 | AccTree.node _ _ => True
 
+def Nat.nonZero : Nat → Prop
+| 0 => False
+| _ => True
+
+-- theorem Nat.smth {m n : Nat} (nzn : nonZero n) : m + n ≠ m :=
+--   match n with
+--   | 0 => False.elim nzn
+--   | n + 1 => _
+
 -- def leftTree : (t : AccTree n + m) → notLeaf t = True  → AccTree n
 -- | AccTree.leaf l, notLeaf => _
 -- | AccTree.node l r, _ => l
@@ -25,6 +33,11 @@ def notLeaf : AccTree x → Bool
 end sandbox
 
 namespace ZpInd
+
+class Zₚ (a : Type u) where
+  IsComposite : a → Prop
+  cmp {x : a} : IsComposite x → a × a
+  join : a → a → a
 
 structure Point : Type
 
@@ -213,24 +226,50 @@ def VolumeInfo.tip : VolumeInfo → Volume
 | single v => v
 | composite _ vi => tip vi
 
-inductive PolyVolume : VolumeInfo → Type where
-| v₁ : (v : Volume) → PolyVolume (VolumeInfo.single v)
-| v₂ : (pv : PolyVolume vi₁)
-     → (pw : PolyVolume vi₂)
-     → HasFaceIntersection (VolumeInfo.tip v) (VolumeInfo.tip u)
-     → PolyVolume (VolumeInfo.composite vi₁ vi₂)
+inductive PolyVolume where
+| v₁ : (v : Volume) → PolyVolume
+| v₂ : (pv pw : PolyVolume)
+     → PolyVolume
+
+def PolyVolume.IsComposite : PolyVolume → Prop
+| v₁ _ => False
+| v₂ _ _ => True
+
+def PolyVolume.cmp {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume × PolyVolume
+:= match pv with
+  | v₂ pv₁ pv₂ => (pv₁, pv₂)
+
+instance : Zₚ PolyVolume where
+  IsComposite := PolyVolume.IsComposite
+  cmp := PolyVolume.cmp
+  join := PolyVolume.v₂
+
+opaque PolyVolume.WellFormed : PolyVolume → Prop
 
 def PolyVolume.left
-: PolyVolume vi
-→ PolyVolume (VolumeInfo.left vi)
+: PolyVolume
+→ PolyVolume
 | v₁ v => v₁ v
-| PolyVolume.v₂ pv _ _ => pv
+| PolyVolume.v₂ pv _ => pv
 
 def PolyVolume.right
-: PolyVolume vi
-→ PolyVolume (VolumeInfo.right vi)
+: PolyVolume
+→ PolyVolume
 | v₁ v => v₁ v
-| PolyVolume.v₂ _ pv _ => pv
+| PolyVolume.v₂ _ pv => pv
+
+axiom PolyVolume.WellFormed_left {pv : PolyVolume}
+  : WellFormed pv → WellFormed (left pv)
+axiom PolyVolume.WellFormed_right {pv : PolyVolume}
+  : WellFormed pv → WellFormed (right pv)
+
+def PolyVolume.IsTruncationOf {pv₁ pv₂ : PolyVolume} (wf₁ : WellFormed pv₁) (wf₂ : WellFormed pv₂) : Prop
+  := match pv₁ with
+     | v₁ _ => False
+     | v₂ v u =>
+       match pv₂ with
+       | v₁ w => v = v₁ w ∨ u = v₁ w
+       | v₂ w _ => v = w ∧ IsTruncationOf (WellFormed_right wf₁) (WellFormed_right wf₂)
 
 -- theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
 --   | PolyVolume.v₁ v => PolyVolume.v₁ v
@@ -242,7 +281,7 @@ inductive T : Type where
 | P : Point → T
 | S : PolySegment _ → T
 | F : PolyFace _ → T
-| V : PolyVolume _ → T
+| V : PolyVolume.WellFormed pv → T
 | join : T → T → T
 
 inductive cmp : T → T → Prop
@@ -255,23 +294,38 @@ inductive cmp : T → T → Prop
   : (pf : PolyFace fi)
   → cmp (T.F <| PolyFace.left pf) (T.F <| PolyFace.right pf)
 | cmp₃
-  : (pv : PolyVolume vi)
-  → cmp (T.V <| PolyVolume.left pv) (T.V <| PolyVolume.right pv)
+  : (wfpv : PolyVolume.WellFormed pv)
+  → cmp (T.V <| PolyVolume.WellFormed_left wfpv) (T.V <| PolyVolume.WellFormed_right wfpv)
 open cmp
 
 mutual
-inductive T.le : T → T → Prop where
-| ε₀ {t : T} : le t t
-| le₁ : ∀ {p₁ q₁ p₂ q₂ : T}, le p₁ q₁ → le p₂ q₂
-      → le (join p₁ p₂) (join q₁ q₂)
+variable {t} [Zₚ t]
+inductive le : t → t → Prop where
+| ε₀ {p : t} : le p p
+| le₁ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → le p₂ q₂
+      → le (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
 
-inductive T.lt : T → T → Prop
-| ε₁ : ∀ {p q : T}, cmp p q → q ≠ ε → lt p (join p q)
-| ε₂ : ∀ {p q : T}, cmp p q → p ≠ ε → lt q (join p q)
-| lt₁ : ∀ {p₁ q₁ p₂ q₂ : T}, lt p₁ q₁ → le p₂ q₂
-      → lt (join p₁ p₂) (join q₁ q₂)
-| lt₂ : ∀ {p₁ q₁ p₂ q₂ : T}, le p₁ q₁ → lt p₂ q₂
-      → lt (join p₁ p₂) (join q₁ q₂)
+inductive lt : t → t → Prop
+| ε₁ : ∀ {p q : t}, Zₚ.cmp p q → q ≠ ε → lt p (Zₚ.join p q)
+| ε₂ : ∀ {p q : t}, Zₚ.cmp p q → p ≠ ε → lt q (Zₚ.join p q)
+| lt₁ : ∀ {p₁ q₁ p₂ q₂ : t}, lt p₁ q₁ → le p₂ q₂
+      → lt (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
+| lt₂ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → lt p₂ q₂
+      → lt (Zₚ.join p₁ p₂) (Zₚ.join q₁ q₂)
 end
+
+-- theorem T.zolt {pv₁ pv₂ : PolyVolume}
+--   (wf₁ : PolyVolume.WellFormed pv₁)
+--   (wf₂ : PolyVolume.WellFormed pv₂)
+--   (isTrunc : PolyVolume.IsTruncationOf wf₁ wf₂)
+--   : lt (V wf₂) (V wf₁) :=
+--   match pv₁ with
+--   | PolyVolume.v₁ _ => False.elim isTrunc
+--   | PolyVolume.v₂ _ _ =>
+--     match pv₂ with
+--     | PolyVolume.v₁ w =>
+--       Or.elim isTrunc (λ h => lt.ε₂ _ _) _
+--     | PolyVolume.v₂ w x => _
+
 
 end ZpInd
