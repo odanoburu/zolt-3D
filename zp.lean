@@ -1,13 +1,13 @@
 section sandbox
-variable (R : α → α → Prop)
-/-- `pairwise R l` means that all the elements with earlier indexes are
-  `R`-related to all the elements with later indexes.
-     pairwise R [1, 2, 3] ↔ R 1 2 ∧ R 1 3 ∧ R 2 3
-  For example if `R = (≠)` then it asserts `l` has no duplicates,
-  and if `R = (<)` then it asserts that `l` is (strictly) sorted. -/
-inductive pairwise : List α → Prop
-| nil : pairwise []
-| cons : ∀ {a : α} {l : List α}, (a' ∈ l → R a a') → pairwise l → pairwise (a :: l)
+-- variable (R : α → α → Prop)
+-- /-- `pairwise R l` means that all the elements with earlier indexes are
+--   `R`-related to all the elements with later indexes.
+--      pairwise R [1, 2, 3] ↔ R 1 2 ∧ R 1 3 ∧ R 2 3
+--   For example if `R = (≠)` then it asserts `l` has no duplicates,
+--   and if `R = (<)` then it asserts that `l` is (strictly) sorted. -/
+-- inductive pairwise : List α → Prop
+-- | nil : pairwise []
+-- | cons : ∀ {a : α} {l : List α}, (a' ∈ l → R a a') → pairwise l → pairwise (a :: l)
 
 inductive AccTree : Nat → Type where
 | leaf : (n : Nat) → AccTree n
@@ -20,6 +20,18 @@ def notLeaf : AccTree x → Bool
 def Nat.nonZero : Nat → Prop
 | 0 => False
 | _ => True
+
+instance : DecidablePred Nat.nonZero := --by intro x; unfold Nat.nonZero; cases _
+  λ n => match n with
+  | Nat.zero => isFalse (λ hnz => by trivial)
+  | Nat.succ _ => isTrue trivial
+
+--theorem Nat.predminus {n : Nat} : nonZero n → pred n = n - 1 := sorry
+
+def Nat.n := 1
+--def Nat.nNonZero : nonZero n := _
+-- #check True
+-- #eval Nat.predminus (n := 1) (Nat.nonZero 1)
 
 -- theorem Nat.smth {m n : Nat} (nzn : nonZero n) : m + n ≠ m :=
 --   match n with
@@ -36,10 +48,21 @@ namespace ZpInd
 
 class Zₚ (a : Type u) where
   cmp : a → a → Prop
-  --WellFormed : a → Prop
-  -- left {x : a} : cmp x → a
-  -- right {x : a} : cmp x → a
+  Composite : a → Prop
+  left : a → a
+  right : a → a
   join : (p : a) → (q : a) → cmp p q → a
+
+opaque Zₚ.WellFormed [Zₚ t] : t → Prop
+
+axiom Zₚ.WellFormed_left {t} [Zₚ t] {a : t} : WellFormed a → WellFormed (left a)
+axiom Zₚ.WellFormed_right {t} [Zₚ t] {a : t} : WellFormed a → WellFormed (right a)
+axiom Zₚ.WellFormed_join {t} [Zₚ t] {a : t} : WellFormed a → Composite a → cmp (left a) (right a)
+
+axiom Zₚ.left_join {t} [Zₚ t] {p q : t} {cpq : cmp p q}
+  : left (join p q cpq) = p
+axiom Zₚ.right_join {t} [Zₚ t] {p q : t} {cpq : cmp p q}
+  : right (join p q cpq) = q
 
 structure Point : Type
 
@@ -237,16 +260,26 @@ def PolyVolume.IsComposite : PolyVolume → Prop
 | v₁ _ => False
 | v₂ _ _ => True
 
+instance : DecidablePred PolyVolume.IsComposite := λ v =>
+  match v with
+  | PolyVolume.v₁ u => isFalse (λ hc => by trivial)
+  | PolyVolume.v₂ _ _ => isTrue trivial
+
 def PolyVolume.left {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
   := match pv with
   | v₂ pv₁ _ => pv₁
+
+def PolyVolume.left' : PolyVolume → PolyVolume
+| v₁ v => v₁ v
+| v₂ v _ => v
 
 def PolyVolume.right {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
   := match pv with
   | v₂ _ pv₁ => pv₁
 
--- def PolyVolume.cmp {pv : PolyVolume} {_ : IsComposite pv} (l r : PolyVolume) : Prop
---   := v₂ l r = pv
+def PolyVolume.right' : PolyVolume → PolyVolume
+| v₁ v => v₁ v
+| v₂ _ v => v
 
 def PolyVolume.join : (p v : PolyVolume) → HasFaceIntersection p v
   → PolyVolume
@@ -260,9 +293,12 @@ def PolyVolume.IsTruncationOf : PolyVolume → PolyVolume → Prop
 
 instance : Zₚ PolyVolume where
   cmp := HasFaceIntersection
+  Composite := PolyVolume.IsComposite
+  left := PolyVolume.left'
+  right := PolyVolume.right'
   join := PolyVolume.join
 
-opaque PolyVolume.WellFormed : PolyVolume → Prop
+--opaque PolyVolume.WellFormed : PolyVolume → Prop
 
 -- def PolyVolume.left
 -- : PolyVolume
@@ -291,7 +327,7 @@ inductive T : Type where
 | P : Point → T
 | S : PolySegment _ → T
 | F : PolyFace _ → T
-| V : PolyVolume.WellFormed pv → T
+| V : PolyVolume → T
 | join : T → T → T
 
 -- inductive cmp : T → T → Prop
@@ -327,13 +363,14 @@ inductive Zₚ.lt : t → t → Prop
       → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
 end
 
-theorem PolyVolume.zolt {p q : PolyVolume}
+theorem PolyVolume.zolt {p q : PolyVolume} {wfp : Zₚ.WellFormed p} {wfq : Zₚ.WellFormed q}
   (isTrunc : IsTruncationOf p q)
   : Zₚ.lt q p :=
   match p with
   | v₁ _ => False.elim isTrunc
   | v₂ u v =>
-    have uvc : Zₚ.cmp u v := sorry
+    have uvC : Zₚ.Composite (v₂ u v) := trivial
+    have uvc : Zₚ.cmp u v := Zₚ.WellFormed_join wfp uvC
     match q with
     | v₁ w =>
       Or.elim isTrunc
@@ -345,14 +382,21 @@ theorem PolyVolume.zolt {p q : PolyVolume}
            have z := Eq.subst rfl <| Zₚ.lt.ε₂ (q := v) uvc
            Eq.subst (motive := λ α => Zₚ.lt α (v₂ u v)) he z)
     | v₂ w x =>
-      have wxc : Zₚ.cmp w x := sorry
+      have wxC : Zₚ.Composite (v₂ w x) := trivial
+      have wxc : Zₚ.cmp w x := Zₚ.WellFormed_join wfq wxC
       Or.elim isTrunc
         (λ h =>
-          have hz := zolt h.right
+          have hz :=
+            zolt (wfp := Zₚ.WellFormed_right wfp)
+                 (wfq := Zₚ.WellFormed_right wfq)
+                 h.right
           have he : Zₚ.le w u := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
           Zₚ.lt.lt₂ he hz wxc uvc)
         (λ h =>
-          have hz : Zₚ.lt w u := zolt h.right
+          have hz : Zₚ.lt w u :=
+            zolt (wfp := Zₚ.WellFormed_left wfp)
+                 (wfq := Zₚ.WellFormed_left wfq)
+                 h.right
           have he : Zₚ.le x v := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
           Zₚ.lt.lt₁ hz he wxc uvc)
 
