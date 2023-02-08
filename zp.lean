@@ -111,96 +111,54 @@ instance : Zₚ PolySegment where
   right := PolySegment.right
   join := PolySegment.join
 
-opaque IsJordan : PolySegment si₁ → PolySegment si₂ → Prop
+opaque IsJordan : PolySegment → PolySegment → Prop
 
 axiom IsJordan_comm
-  : ∀ {si₁ : SegmentInfo} {si₂ : SegmentInfo}
-      {ps₁ : PolySegment si₁} {ps₂ : PolySegment si₂}
+  : ∀ {ps₁ ps₂ : PolySegment}
   , IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
 
 -- couldn't a face just be a single polysegment that is a jordan
 -- curve?
 structure Face : Type where
-  s1 : PolySegment si₁
-  s2 : PolySegment si₂
-  jordan : @IsJordan si₁ si₂ s1 s2
+  s1 : PolySegment
+  s2 : PolySegment
+  jordan : IsJordan s1 s2
 
-opaque HasLineIntersection : Face → Face → Prop
+inductive PolyFace : Type where
+| f₁ : (f : Face) → PolyFace
+| f₂ : (pf pg : PolyFace) → PolyFace
 
-axiom HasLineIntersection_comm {f g : Face} :
+opaque HasLineIntersection : PolyFace → PolyFace → Prop
+
+axiom HasLineIntersection_comm {f g : PolyFace} :
   HasLineIntersection f g → HasLineIntersection g f
 
-inductive FaceInfo where
-| single : Face → FaceInfo
-| composite : FaceInfo → FaceInfo → FaceInfo
-
-def FaceInfo.left : FaceInfo → FaceInfo
-| single f => single f
-| composite fi _ => fi
-
-def FaceInfo.right : FaceInfo → FaceInfo
-| single f => single f
-| composite _ fi => fi
-
-def FaceInfo.tip : FaceInfo → Face
-| FaceInfo.single f => f
-| FaceInfo.composite _ f => FaceInfo.tip f
-
-inductive PolyFace : FaceInfo → Type where
-| f₁ : (f : Face) → PolyFace (FaceInfo.single f)
-| f₂ : (pf : PolyFace fi₁)
-     → (pg : PolyFace fi₂)
-     → HasLineIntersection (FaceInfo.tip fi₁) (FaceInfo.tip fi₂)
-     → PolyFace (FaceInfo.composite fi₁ fi₂)
-
-def PolyFace.left
-: PolyFace fi
-→ PolyFace (FaceInfo.left fi)
+def PolyFace.left : PolyFace → PolyFace
 | f₁ f => f₁ f
-| PolyFace.f₂ ps _ _ => ps
+| PolyFace.f₂ ps _ => ps
 
-def PolyFace.right
-: PolyFace fi
-→ PolyFace (FaceInfo.right fi)
+def PolyFace.right : PolyFace → PolyFace
 | f₁ f => f₁ f
-| PolyFace.f₂ _ ps _ => ps
+| PolyFace.f₂ _ ps => ps
 
 -- theorem polyface_comm : PolyFace fi → PolyFace g f
 --   | PolyFace.f₁ f => PolyFace.f₁ f
 --   | PolyFace.f₂ pf₁ pf₂ lineInter
 --     => PolyFace.f₂ pf₂ pf₁ (HasLineIntersection_comm lineInter)
 
-opaque IsClosed : PolyFace fi → PolyFace gi → Prop
+opaque IsClosed : PolyFace → PolyFace → Prop
 
-axiom IsClosed_comm {fi₁ fi₂ : FaceInfo}
-  {pf₁ : PolyFace fi₁} {pf₂ : PolyFace fi₂}
+axiom IsClosed_comm {pf₁ pf₂ : PolyFace}
   : IsClosed pf₁ pf₂  →  IsClosed pf₂ pf₁
 
 structure Volume : Type where
-  vol1 : PolyFace fi₁
-  vol2 : PolyFace fi₂
-  closed : @IsClosed fi₁ fi₂ vol1 vol2
-
--- inductive VolumeInfo where
--- | single : Volume → VolumeInfo
--- | composite : VolumeInfo → VolumeInfo → VolumeInfo
-
--- def VolumeInfo.left : VolumeInfo → VolumeInfo
--- | single v => single v
--- | composite vi _ => vi
-
--- def VolumeInfo.right : VolumeInfo → VolumeInfo
--- | single v => single v
--- | composite _ vi => vi
-
--- def VolumeInfo.tip : VolumeInfo → Volume
--- | single v => v
--- | composite _ vi => tip vi
+  vol1 : PolyFace
+  vol2 : PolyFace
+  closed : IsClosed vol1 vol2
 
 inductive PolyVolume where
 | v₁ : (v : Volume) → PolyVolume
-| v₂ : (pv pw : PolyVolume)
-     → PolyVolume
+| v₂ : (pv pw : PolyVolume) → PolyVolume
 
 opaque PolyVolume.HasFaceIntersection : PolyVolume → PolyVolume → Prop
 
@@ -250,51 +208,14 @@ instance : Zₚ PolyVolume where
   right := PolyVolume.right'
   join := PolyVolume.join
 
---opaque PolyVolume.WellFormed : PolyVolume → Prop
-
--- def PolyVolume.left
--- : PolyVolume
--- → PolyVolume
--- | v₁ v => v₁ v
--- | PolyVolume.v₂ pv _ => pv
-
--- def PolyVolume.right
--- : PolyVolume
--- → PolyVolume
--- | v₁ v => v₁ v
--- | PolyVolume.v₂ _ pv => pv
-
--- axiom PolyVolume.WellFormed_left {pv : PolyVolume}
---   : WellFormed pv → WellFormed (left pv)
--- axiom PolyVolume.WellFormed_right {pv : PolyVolume}
---   : WellFormed pv → WellFormed (right pv)
-
--- theorem polyvolume_comm : PolyVolume v u → PolyVolume u v
---   | PolyVolume.v₁ v => PolyVolume.v₁ v
---   | PolyVolume.v₂ pv₁ pv₂ faceInter
---     => PolyVolume.v₂ pv₂ pv₁ (HasFaceIntersection_comm faceInter)
-
 inductive T : Type where
 | ε : T
 | P : Point → T
 | S : PolySegment → T
-| F : PolyFace _ → T
+| F : PolyFace → T
 | V : PolyVolume → T
 | join : T → T → T
 
--- inductive cmp : T → T → Prop
--- | cmp₀
---   : (s : Segment _ _) → cmp (T.P s.p1) (T.P s.p2)
--- | cmp₁
---   : (ps : PolySegment si)
---   → cmp (T.S (PolySegment.left ps)) (T.S (PolySegment.right ps))
--- | cmp₂
---   : (pf : PolyFace fi)
---   → cmp (T.F <| PolyFace.left pf) (T.F <| PolyFace.right pf)
--- | cmp₃
---   : (wfpv : PolyVolume.WellFormed pv)
---   → cmp (T.V <| PolyVolume.WellFormed_left wfpv) (T.V <| PolyVolume.WellFormed_right wfpv)
--- open cmp
 
 mutual
 variable {t} [Zₚ t]
