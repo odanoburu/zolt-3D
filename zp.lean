@@ -1,13 +1,4 @@
 section sandbox
--- variable (R : α → α → Prop)
--- /-- `pairwise R l` means that all the elements with earlier indexes are
---   `R`-related to all the elements with later indexes.
---      pairwise R [1, 2, 3] ↔ R 1 2 ∧ R 1 3 ∧ R 2 3
---   For example if `R = (≠)` then it asserts `l` has no duplicates,
---   and if `R = (<)` then it asserts that `l` is (strictly) sorted. -/
--- inductive pairwise : List α → Prop
--- | nil : pairwise []
--- | cons : ∀ {a : α} {l : List α}, (a' ∈ l → R a a') → pairwise l → pairwise (a :: l)
 
 inductive AccTree : Nat → Type where
 | leaf : (n : Nat) → AccTree n
@@ -21,26 +12,10 @@ def Nat.nonZero : Nat → Prop
 | 0 => False
 | _ => True
 
-instance : DecidablePred Nat.nonZero := --by intro x; unfold Nat.nonZero; cases _
+instance : DecidablePred Nat.nonZero :=
   λ n => match n with
   | Nat.zero => isFalse (λ hnz => by trivial)
   | Nat.succ _ => isTrue trivial
-
---theorem Nat.predminus {n : Nat} : nonZero n → pred n = n - 1 := sorry
-
-def Nat.n := 1
---def Nat.nNonZero : nonZero n := _
--- #check True
--- #eval Nat.predminus (n := 1) (Nat.nonZero 1)
-
--- theorem Nat.smth {m n : Nat} (nzn : nonZero n) : m + n ≠ m :=
---   match n with
---   | 0 => False.elim nzn
---   | n + 1 => _
-
--- def leftTree : (t : AccTree n + m) → notLeaf t = True  → AccTree n
--- | AccTree.leaf l, notLeaf => _
--- | AccTree.node l r, _ => l
 
 end sandbox
 
@@ -66,99 +41,75 @@ axiom Zₚ.right_join {t} [Zₚ t] {p q : t} {cpq : cmp p q}
 
 structure Point : Type
 
-structure Segment (p1 p2 : Point) : Type where
+structure Segment : Type where
   p1 : Point
   p2 : Point
   neq : p1 ≠ p2
 
-def Segment.invert : Segment p₁ p₂ → Segment p₂ p₁
+def Segment.invert : Segment → Segment
 | s => {p1 := s.p2, p2 := s.p1, neq := s.neq}
 
-theorem Segment.invert_symm {s : Segment p q}
+theorem Segment.invert_symm {s : Segment}
   : invert (invert s) = s
   := rfl
 
-theorem segment_comm : Segment p1 p2 → Segment p2 p1
-  | {p1, p2, neq} => { p1 := p2, p2 := p1, neq := neq}
-
-opaque NotCollinear : Segment p q → Segment r s → Prop
-
-axiom NotCollinear_comm {p₁ q₁ p₂ q₂ : Point} {s₁ : Segment p₁ q₁} {s₂ : Segment p₂ q₂}
-  : NotCollinear s₁ s₂ → NotCollinear s₂ s₁
-
-opaque HasPointIntersection : Segment p q → Segment r s → Prop
-
-axiom HasPointIntersection_comm : ∀ {p₁ q₁ p₂ q₂ : Point} {s₁ : Segment p₁ q₁} {s₂ : Segment p₂ q₂}
-  , HasPointIntersection s₁ s₂ → HasPointIntersection s₂ s₁
-
-inductive SegmentInfo : Type where
-| single : (s : Segment r s) → SegmentInfo
-| composite : SegmentInfo → SegmentInfo → SegmentInfo
-
-def SegmentInfo.invert : SegmentInfo → SegmentInfo
-| SegmentInfo.single s => SegmentInfo.single s
-| SegmentInfo.composite s1 s2 => SegmentInfo.composite s2 s1
-
-def SegmentInfo.left : SegmentInfo → SegmentInfo
-| SegmentInfo.single si => SegmentInfo.single si
-| SegmentInfo.composite si _ => si
-
-def SegmentInfo.right : SegmentInfo → SegmentInfo
-| SegmentInfo.single si => SegmentInfo.single si
-| SegmentInfo.composite _ si => si
-
-def segmentTip : SegmentInfo → Segment r s
-| SegmentInfo.single s => s
-| SegmentInfo.composite _ si => segmentTip si
-
--- inductive SegmentInfo.IsComposite : SegmentInfo → Prop
--- | compound (si₁ si₂ : SegmentInfo) : SegmentInfo.IsComposite (SegmentInfo.composite si₁ si₂)
-
--- instance : DecidablePred SegmentInfo.IsComposite :=
---   λ si => isTrue (match si with
---                  | SegmentInfo.composite si₁ si₂ => SegmentInfo.IsComposite.compound si₁ si₂)
-
-
 -- NOTE: I have already pointed this out, but do we really need
 -- NotCollinear? HasPointIntersection seems like it's enough for me…
-inductive PolySegment : SegmentInfo → Type where
-| s₁ : (s : Segment _ _) → PolySegment (SegmentInfo.single s)
-| s₂ : PolySegment si₁
-     → PolySegment si₂
-     → NotCollinear (segmentTip si₁) (segmentTip si₂)
-     → HasPointIntersection (segmentTip si₁) (segmentTip si₂)
-     → PolySegment (SegmentInfo.composite si₁ si₂)
+inductive PolySegment : Type where
+| s₁ : Segment → PolySegment
+| s₂ : (s₁ s₂ : PolySegment)
+     → PolySegment
 
-def PolySegment.components
-: PolySegment si
-→ Option (PolySegment (SegmentInfo.left si)
-         × PolySegment (SegmentInfo.right si))
-| PolySegment.s₁ __ => none
-| PolySegment.s₂ ps₁ ps₂ _ _ => some (ps₁, ps₂)
+opaque NotCollinear : PolySegment → PolySegment → Prop
 
-def PolySegment.left
-: PolySegment si
-→ PolySegment (SegmentInfo.left si)
-| PolySegment.s₂ ps _ _ _ => ps
+axiom NotCollinear_comm {ps₁ ps₂ : PolySegment}
+  : NotCollinear ps₁ ps₂ → NotCollinear ps₂ ps₁
 
-def PolySegment.right
-: PolySegment si
-→ PolySegment (SegmentInfo.right si)
-| PolySegment.s₂ _ ps _ _ => ps
+opaque PolySegment.HasPointIntersection : PolySegment → PolySegment → Prop
 
-def PolySegment.invert {si : SegmentInfo} : PolySegment si → PolySegment (SegmentInfo.invert si)
+axiom PolySegment.HasPointIntersection_comm : ∀ {ps₁ ps₂ : PolySegment}
+  , HasPointIntersection ps₁ ps₂ → HasPointIntersection ps₂ ps₁
+
+-- def PolySegment.components
+-- : PolySegment si
+-- → Option (PolySegment (SegmentInfo.left si)
+--          × PolySegment (SegmentInfo.right si))
+-- | PolySegment.s₁ __ => none
+-- | PolySegment.s₂ ps₁ ps₂ _ _ => some (ps₁, ps₂)
+
+def PolySegment.left : PolySegment → PolySegment
+| s₁ ps => s₁ ps
+| s₂ ps _ => ps
+
+def PolySegment.right : PolySegment → PolySegment
+| s₁ ps => s₁ ps
+| s₂ _ ps => ps
+
+def PolySegment.IsComposite : PolySegment → Prop
+| s₁ _ => False
+| s₂ _ _ => True
+
+def PolySegment.invert : PolySegment → PolySegment
 | PolySegment.s₁ s => PolySegment.s₁ s
-| PolySegment.s₂ ps₁ ps₂ notColl hasPointInter
-  => PolySegment.s₂ ps₂ ps₁ (NotCollinear_comm notColl) (HasPointIntersection_comm hasPointInter)
+| PolySegment.s₂ ps₁ ps₂ => PolySegment.s₂ ps₂ ps₁
 
-@[simp] theorem SegmentInfo.invert_symm : invert (invert si) = si
-  := match si with
-  | single _ => rfl
-  | composite _ _ => rfl
+theorem PolySegment.invert_symm {ps : PolySegment}
+  : invert (invert ps) = ps
+  := _
 
--- theorem PolySegment.invert_symm {ps : PolySegment si}
---   : @Eq.subst _ PolySegment _ _ SegmentInfo.invert_symm (invert (invert ps)) = ps
---   := rfl
+def PolySegment.cmp : PolySegment → PolySegment → Prop
+| ps₁, ps₂ => NotCollinear ps₁ ps₂ ∧ HasPointIntersection ps₁ ps₂
+
+def PolySegment.join : (p v : PolySegment) → PolySegment.cmp p v
+  → PolySegment
+| ps₁, ps₂, _ => s₂ ps₁ ps₂
+
+instance : Zₚ PolySegment where
+  cmp := PolySegment.cmp
+  Composite := PolySegment.IsComposite
+  left := PolySegment.left
+  right := PolySegment.right
+  join := PolySegment.join
 
 opaque IsJordan : PolySegment si₁ → PolySegment si₂ → Prop
 
@@ -251,9 +202,9 @@ inductive PolyVolume where
 | v₂ : (pv pw : PolyVolume)
      → PolyVolume
 
-opaque HasFaceIntersection : PolyVolume → PolyVolume → Prop
+opaque PolyVolume.HasFaceIntersection : PolyVolume → PolyVolume → Prop
 
-axiom HasFaceIntersection_comm {v u : PolyVolume} :
+axiom PolyVolume.HasFaceIntersection_comm {v u : PolyVolume} :
   HasFaceIntersection v u → HasFaceIntersection u v
 
 def PolyVolume.IsComposite : PolyVolume → Prop
@@ -288,11 +239,12 @@ def PolyVolume.join : (p v : PolyVolume) → HasFaceIntersection p v
 def PolyVolume.IsTruncationOf : PolyVolume → PolyVolume → Prop
 | v₁ _, _ => False
 | v₂ v u, v₁ w => v = v₁ w ∨ u = v₁ w
+-- xor??
 | v₂ v u, v₂ w x => (v = w ∧ IsTruncationOf u x)
                  ∨ (u = x ∧ IsTruncationOf v w)
 
 instance : Zₚ PolyVolume where
-  cmp := HasFaceIntersection
+  cmp := PolyVolume.HasFaceIntersection
   Composite := PolyVolume.IsComposite
   left := PolyVolume.left'
   right := PolyVolume.right'
@@ -325,7 +277,7 @@ instance : Zₚ PolyVolume where
 inductive T : Type where
 | ε : T
 | P : Point → T
-| S : PolySegment _ → T
+| S : PolySegment → T
 | F : PolyFace _ → T
 | V : PolyVolume → T
 | join : T → T → T
