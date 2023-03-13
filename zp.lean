@@ -53,8 +53,6 @@ theorem Segment.invert_symm {s : Segment}
   : invert (invert s) = s
   := rfl
 
--- NOTE: I have already pointed this out, but do we really need
--- NotCollinear? HasPointIntersection seems like it's enough for me…
 inductive PolySegment : Type where
 | s₁ : Segment → PolySegment
 | s₂ : (s₁ s₂ : PolySegment)
@@ -69,13 +67,6 @@ opaque PolySegment.HasPointIntersection : PolySegment → PolySegment → Prop
 
 axiom PolySegment.HasPointIntersection_comm : ∀ {ps₁ ps₂ : PolySegment}
   , HasPointIntersection ps₁ ps₂ → HasPointIntersection ps₂ ps₁
-
--- def PolySegment.components
--- : PolySegment si
--- → Option (PolySegment (SegmentInfo.left si)
---          × PolySegment (SegmentInfo.right si))
--- | PolySegment.s₁ __ => none
--- | PolySegment.s₂ ps₁ ps₂ _ _ => some (ps₁, ps₂)
 
 def PolySegment.left : PolySegment → PolySegment
 | s₁ ps => s₁ ps
@@ -92,10 +83,6 @@ def PolySegment.IsComposite : PolySegment → Prop
 def PolySegment.invert : PolySegment → PolySegment
 | PolySegment.s₁ s => PolySegment.s₁ s
 | PolySegment.s₂ ps₁ ps₂ => PolySegment.s₂ ps₂ ps₁
-
-theorem PolySegment.invert_symm {ps : PolySegment}
-  : invert (invert ps) = ps
-  := _
 
 def PolySegment.cmp : PolySegment → PolySegment → Prop
 | ps₁, ps₂ => NotCollinear ps₁ ps₂ ∧ HasPointIntersection ps₁ ps₂
@@ -140,11 +127,6 @@ def PolyFace.left : PolyFace → PolyFace
 def PolyFace.right : PolyFace → PolyFace
 | f₁ f => f₁ f
 | PolyFace.f₂ _ ps => ps
-
--- theorem polyface_comm : PolyFace fi → PolyFace g f
---   | PolyFace.f₁ f => PolyFace.f₁ f
---   | PolyFace.f₂ pf₁ pf₂ lineInter
---     => PolyFace.f₂ pf₂ pf₁ (HasLineIntersection_comm lineInter)
 
 opaque IsClosed : PolyFace → PolyFace → Prop
 
@@ -194,19 +176,28 @@ def PolyVolume.join : (p v : PolyVolume) → HasFaceIntersection p v
   → PolyVolume
 | p, v, _ => v₂ p v
 
-def PolyVolume.IsTruncationOf : PolyVolume → PolyVolume → Prop
-| v₁ _, _ => False
-| v₂ v u, v₁ w => v = v₁ w ∨ u = v₁ w
--- xor??
-| v₂ v u, v₂ w x => (v = w ∧ IsTruncationOf u x)
-                 ∨ (u = x ∧ IsTruncationOf v w)
-
 instance : Zₚ PolyVolume where
   cmp := PolyVolume.HasFaceIntersection
   Composite := PolyVolume.IsComposite
   left := PolyVolume.left'
   right := PolyVolume.right'
   join := PolyVolume.join
+
+def PolyVolume.IsTruncationOf {p q : PolyVolume}
+  (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
+  : Prop
+  := match p with
+  | v₁ _ => False
+  | v₂ v u =>
+    match q with
+    | v₁ w => v = v₁ w ∨ u = v₁ w
+    | v₂ w x => (v = w ∧ IsTruncationOf (Zₚ.WellFormed_right wfp) /- u -/ (Zₚ.WellFormed_right wfq) /- x -/)
+                 ∨ (u = x ∧ IsTruncationOf (Zₚ.WellFormed_left wfp) /- v -/ (Zₚ.WellFormed_left wfq) /- w -/)
+
+-- def PolyVolume.TruncationOf {p q : PolyVolume}
+--   (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
+--   (PolyVolume.IsTruncationOf wfp wfq)
+--   : ()
 
 inductive T : Type where
 | ε : T
@@ -236,8 +227,9 @@ inductive Zₚ.lt : t → t → Prop
       → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
 end
 
-theorem PolyVolume.zolt {p q : PolyVolume} {wfp : Zₚ.WellFormed p} {wfq : Zₚ.WellFormed q}
-  (isTrunc : IsTruncationOf p q)
+theorem PolyVolume.zolt {p q : PolyVolume}
+  {wfp : Zₚ.WellFormed p} {wfq : Zₚ.WellFormed q}
+  (isTrunc : IsTruncationOf wfp wfq)
   : Zₚ.lt q p :=
   match p with
   | v₁ _ => False.elim isTrunc
