@@ -22,7 +22,9 @@ end sandbox
 namespace ZpInd
 
 class Zₚ (a : Type u) where
+  ε : a
   cmp : a → a → Prop
+  NonEmpty : a → Prop
   Composite : a → Prop
   left : a → a
   right : a → a
@@ -39,6 +41,9 @@ axiom Zₚ.left_join {t} [Zₚ t] {p q : t} {cpq : cmp p q}
 axiom Zₚ.right_join {t} [Zₚ t] {p q : t} {cpq : cmp p q}
   : right (join p q cpq) = q
 
+axiom Zₚ.empty_left_join {t} [Zₚ t] {p : t} {εp : cmp ε p} : join ε p εp = p
+axiom Zₚ.empty_right_join {t} [Zₚ t] {p : t} {pε : cmp p ε} : join p ε pε = p
+
 structure Point : Type
 
 structure Segment : Type where
@@ -54,6 +59,7 @@ theorem Segment.invert_symm {s : Segment}
   := rfl
 
 inductive PolySegment : Type where
+| s₀ : PolySegment
 | s₁ : Segment → PolySegment
 | s₂ : (s₁ s₂ : PolySegment)
      → PolySegment
@@ -69,18 +75,26 @@ axiom PolySegment.HasPointIntersection_comm : ∀ {ps₁ ps₂ : PolySegment}
   , HasPointIntersection ps₁ ps₂ → HasPointIntersection ps₂ ps₁
 
 def PolySegment.left : PolySegment → PolySegment
+| s₀ => s₀
 | s₁ ps => s₁ ps
 | s₂ ps _ => ps
 
 def PolySegment.right : PolySegment → PolySegment
+| s₀ => s₀
 | s₁ ps => s₁ ps
 | s₂ _ ps => ps
+def PolySegment.NonEmpty : PolySegment → Prop
+| s₀ => False
+| s₁ _ => True
+| s₂ _ _ => True
 
 def PolySegment.IsComposite : PolySegment → Prop
+| s₀ => False
 | s₁ _ => False
 | s₂ _ _ => True
 
 def PolySegment.invert : PolySegment → PolySegment
+| s₀ => s₀
 | PolySegment.s₁ s => PolySegment.s₁ s
 | PolySegment.s₂ ps₁ ps₂ => PolySegment.s₂ ps₂ ps₁
 
@@ -92,7 +106,9 @@ def PolySegment.join : (p v : PolySegment) → PolySegment.cmp p v
 | ps₁, ps₂, _ => s₂ ps₁ ps₂
 
 instance : Zₚ PolySegment where
+  ε := PolySegment.s₀
   cmp := PolySegment.cmp
+  NonEmpty := PolySegment.NonEmpty
   Composite := PolySegment.IsComposite
   left := PolySegment.left
   right := PolySegment.right
@@ -139,20 +155,31 @@ structure Volume : Type where
   closed : IsClosed vol1 vol2
 
 inductive PolyVolume where
+| v₀ : PolyVolume
 | v₁ : (v : Volume) → PolyVolume
 | v₂ : (pv pw : PolyVolume) → PolyVolume
 
 opaque PolyVolume.HasFaceIntersection : PolyVolume → PolyVolume → Prop
 
+axiom PolyVolume.EmptyAlwaysHasFaceIntersection {v : PolyVolume} :
+  HasFaceIntersection v₀ v
+
 axiom PolyVolume.HasFaceIntersection_comm {v u : PolyVolume} :
   HasFaceIntersection v u → HasFaceIntersection u v
 
 def PolyVolume.IsComposite : PolyVolume → Prop
+| v₀ => False
 | v₁ _ => False
+| v₂ _ _ => True
+
+def PolyVolume.NonEmpty : PolyVolume → Prop
+| v₀ => False
+| v₁ _ => True
 | v₂ _ _ => True
 
 instance : DecidablePred PolyVolume.IsComposite := λ v =>
   match v with
+  | PolyVolume.v₀ => isFalse (λ hc => by trivial)
   | PolyVolume.v₁ u => isFalse (λ hc => by trivial)
   | PolyVolume.v₂ _ _ => isTrue trivial
 
@@ -161,6 +188,7 @@ def PolyVolume.left {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
   | v₂ pv₁ _ => pv₁
 
 def PolyVolume.left' : PolyVolume → PolyVolume
+| v₀ => v₀
 | v₁ v => v₁ v
 | v₂ v _ => v
 
@@ -169,6 +197,7 @@ def PolyVolume.right {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
   | v₂ _ pv₁ => pv₁
 
 def PolyVolume.right' : PolyVolume → PolyVolume
+| v₀ => v₀
 | v₁ v => v₁ v
 | v₂ _ v => v
 
@@ -177,41 +206,42 @@ def PolyVolume.join : (p v : PolyVolume) → HasFaceIntersection p v
 | p, v, _ => v₂ p v
 
 instance : Zₚ PolyVolume where
+  ε := PolyVolume.v₀
   cmp := PolyVolume.HasFaceIntersection
+  NonEmpty := PolyVolume.NonEmpty
   Composite := PolyVolume.IsComposite
   left := PolyVolume.left'
   right := PolyVolume.right'
   join := PolyVolume.join
 
-def PolyVolume.IsTruncationOf {p q : PolyVolume}
-  (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
-  : Prop
-  := match p with
-  | v₁ _ => False
-  | v₂ v u =>
-    match q with
-    | v₁ w => v = v₁ w ∨ u = v₁ w
-    | v₂ w x => (v = w ∧ IsTruncationOf (Zₚ.WellFormed_right wfp) /- u -/ (Zₚ.WellFormed_right wfq) /- x -/)
-                 ∨ (u = x ∧ IsTruncationOf (Zₚ.WellFormed_left wfp) /- v -/ (Zₚ.WellFormed_left wfq) /- w -/)
+section Truncation
+variable {t} [Zₚ t]
+-- def PolyVolume.IsTruncationOf {p q : PolyVolume}
+--   (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
+--   : Prop
+--   := match p with
+--   | v₁ _ => False
+--   | v₂ v u =>
+--     match q with
+--     | v₁ w => v = v₁ w ∨ u = v₁ w
+--     | v₂ w x => (v = w ∧ IsTruncationOf (Zₚ.WellFormed_right wfp) /- u -/ (Zₚ.WellFormed_right wfq) /- x -/)
+--                  ∨ (u = x ∧ IsTruncationOf (Zₚ.WellFormed_left wfp) /- v -/ (Zₚ.WellFormed_left wfq) /- w -/)
 
 -- def PolyVolume.TruncationOf {p q : PolyVolume}
 --   (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
 --   (PolyVolume.IsTruncationOf wfp wfq)
 --   : ()
 
-inductive T : Type where
-| ε : T
-| P : Point → T
-| S : PolySegment → T
-| F : PolyFace → T
-| V : PolyVolume → T
-| join : T → T → T
+inductive Zₚ.TruncationOf : t → t → Prop where
+| t₀ {p : t} : NonEmpty p → TruncationOf ε p
+| t₁ {r : t} : (pr : cmp p r) → (qr : cmp q r) → TruncationOf p q → TruncationOf (join p r pr) (join q r qr)
 
+end Truncation
 
 mutual
 variable {t} [Zₚ t]
 inductive Zₚ.le : t → t → Prop where
-| ε₀ {p : t} : le p p
+| refl {p : t} : le p p
 | le₁ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → le p₂ q₂
       → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
       → le (join p₁ p₂ pc) (join q₁ q₂ qc)
@@ -227,42 +257,17 @@ inductive Zₚ.lt : t → t → Prop
       → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
 end
 
-theorem PolyVolume.zolt {p q : PolyVolume}
-  {wfp : Zₚ.WellFormed p} {wfq : Zₚ.WellFormed q}
-  (isTrunc : IsTruncationOf wfp wfq)
+theorem PolyVolume.zolt {q p : PolyVolume}
+  (isTrunc : Zₚ.TruncationOf q p)
   : Zₚ.lt q p :=
-  match p with
-  | v₁ _ => False.elim isTrunc
-  | v₂ u v =>
-    have uvC : Zₚ.Composite (v₂ u v) := trivial
-    have uvc : Zₚ.cmp u v := Zₚ.WellFormed_join wfp uvC
-    match q with
-    | v₁ w =>
-      Or.elim isTrunc
-        (λ he : u = v₁ w =>
-          have z : Zₚ.lt u (Zₚ.join u v uvc) := Zₚ.lt.ε₁ (p := u) uvc
-          have z' : Zₚ.lt u (v₂ u v) := Eq.subst rfl z
-          show Zₚ.lt (v₁ w) (v₂ u v) from Eq.subst (motive := λ α => Zₚ.lt α (v₂ u v)) he z')
-        (λ he : v = v₁ w =>
-           have z := Eq.subst rfl <| Zₚ.lt.ε₂ (q := v) uvc
-           Eq.subst (motive := λ α => Zₚ.lt α (v₂ u v)) he z)
-    | v₂ w x =>
-      have wxC : Zₚ.Composite (v₂ w x) := trivial
-      have wxc : Zₚ.cmp w x := Zₚ.WellFormed_join wfq wxC
-      Or.elim isTrunc
-        (λ h =>
-          have hz :=
-            zolt (wfp := Zₚ.WellFormed_right wfp)
-                 (wfq := Zₚ.WellFormed_right wfq)
-                 h.right
-          have he : Zₚ.le w u := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
-          Zₚ.lt.lt₂ he hz wxc uvc)
-        (λ h =>
-          have hz : Zₚ.lt w u :=
-            zolt (wfp := Zₚ.WellFormed_left wfp)
-                 (wfq := Zₚ.WellFormed_left wfq)
-                 h.right
-          have he : Zₚ.le x v := Eq.subst (Eq.symm h.left) Zₚ.le.ε₀
-          Zₚ.lt.lt₁ hz he wxc uvc)
+  match isTrunc with
+  | Zₚ.TruncationOf.t₀ _ =>
+      have pεcmp : Zₚ.cmp p v₀
+        := HasFaceIntersection_comm EmptyAlwaysHasFaceIntersection
+      (Eq.subst Zₚ.empty_right_join <| Zₚ.lt.ε₂ pεcmp)
+  | Zₚ.TruncationOf.t₁ (p := w) (q := u) (r := r) wrcmp urcmp qIsTruncOfp =>
+    have w_lt_u : Zₚ.lt w u := zolt qIsTruncOfp
+    have r_le_r : Zₚ.le r r := Zₚ.le.refl
+    Zₚ.lt.lt₁ w_lt_u r_le_r wrcmp urcmp
 
 end ZpInd
