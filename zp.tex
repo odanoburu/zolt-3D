@@ -1,74 +1,238 @@
-% Created 2023-03-17 Fri 15:55
-% Intended LaTeX compiler: pdflatex
-\documentclass[11pt]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{graphicx}
-\usepackage{longtable}
-\usepackage{wrapfig}
-\usepackage{rotating}
-\usepackage[normalem]{ulem}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{capt-of}
-\usepackage{hyperref}
-\author{bruno cuconato}
+\documentclass[12pt]{article} %
+
+\usepackage{fontspec}
+% switch to a monospace font supporting more Unicode characters
+\setmonofont{FreeMono} %
+
+\usepackage[lmargin=1.8in,rmargin=1.8in]{geometry} % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper} % or letterpaper (US) or a5paper or....
+
+\usepackage{setspace}
+\onehalfspacing{} % 130% spacing between lines: %
+\frenchspacing{}
+
+\usepackage{amsmath} %
+\usepackage{amssymb} %
+
+% https://leanprover.github.io/lean4/doc/syntax_highlight_in_latex.html
+\usepackage{minted}
+% instruct minted to use our local theorem.py
+\newmintinline[lean]{lean4.py:Lean4Lexer -x}{bgcolor=white}
+\newminted[leancode]{lean4.py:Lean4Lexer -x}{fontsize=\footnotesize}
+\usemintedstyle{tango}  % a nice, colorful theme
+
+\usepackage{newunicodechar} %
+\newunicodechar{ₚ}{\ensuremath{_{p}}} %
+
+\newcommand{\leanline}[1]{\mintinline{lean}{#1}} %
+\newcommand{\point}{\mintinline{lean}{Point}} %
+\newcommand{\segment}{\mintinline{lean}{Segment}} %
+\newcommand{\psegment}{\mintinline{lean}{PolySegment}} %
+\newcommand{\face}{\mintinline{lean}{Face}} %
+\newcommand{\pface}{\mintinline{lean}{PolyFace}} %
+\newcommand{\volume}{\mintinline{lean}{Volume}} %
+\newcommand{\pvolume}{\mintinline{lean}{PolyVolume}} %
+\newcommand{\truncof}{\mintinline{lean}{TruncationOf}} %
+
+\usepackage{cleveref} %
+
+\newcommand{\zp}{\ensuremath{Z_{p}}}
+
 \date{\today}
-\title{}
-\hypersetup{
- pdfauthor={bruno cuconato},
- pdftitle={},
- pdfkeywords={},
- pdfsubject={},
- pdfcreator={Emacs 28.2 (Org mode 9.5.5)},
- pdflang={English}}
+\title{de Zolt's theorem}
+
 \begin{document}
-We define Points as an opaque type, they are not explicitly described,
-and we can't ‘look inside’ them.
+\maketitle %
 
-With the exception of Points, in Lean we represent the geometric
-objects by their constructions (or deconstructions, depending on how
-you look at it).
+\section{Geometric objects in Lean}\label{sec:geom-objects-lean} %
 
-A pair of points form a Segment; in Lean, this is a structure
+We take geometric points as given, so we define them as an opaque Lean type (henceforth written as \point). %
+This means they are not explicitly described, and we can't ‘look inside’ them. %
+
+\begin{leancode}
+structure Point : Type
+\end{leancode}
+The treatment given to \point{} is exceptional: all the other geometric objects are represented in Lean by their constructions (or deconstructions, depending on how you look at it). %
+
+\begin{leancode}
+structure Segment : Type where
+  p1 : Point
+  p2 : Point
+  neq : p1 ≠ p2
+\end{leancode}
+
+A pair of points form a \segment; in Lean, this is a structure
 containing the two points, together with a proof that they are
-different from other (i.e., not the same point). A PolySegment is
-isomorphic to a list of Segments, having a constructor for the empty
-PolySegment, a constructor that raises a Segment into a singleton
-PolySegment, and one that joins two PolySegments into one.
+different from other (i.e., not the same point). %
 
-A Face is a pair of PolySegments and a proof that they form a Jordan
-curve. A PolyFace is isomorphic to a list of Faces, having a
-constructor for the empty PolyFace, a constructor that raises a Face
-into a singleton PolyFace, and one that joins two PolyFaces into one.
+The type of \psegment{} is isomorphic to a list of \segment, having a constructor for the empty \psegment, a constructor that raises a \segment{} into a singleton \psegment, and one that joins two values of \psegment{} into one. %
+\begin{leancode}
+inductive PolySegment : Type where
+| s₀ : PolySegment
+| s₁ : Segment → PolySegment
+| s₂ : PolySegment → PolySegment → PolySegment
+\end{leancode}
 
-A Volume is a pair of PolyFaces together with a proof that they form a
-closed volume. A PolyVolume is isomorphic to a list of Volumes, having
-a constructor for the empty PolyVolume, a constructor that raises a
-Volume into a singleton PolyVolume, and one that joins two PolyVolumes
-into one.
+A \face{} is a pair of \psegment{} and a proof that they form a Jordan
+curve. %
+For this purpose, a Jordan curve is defined opaquely as a predicate \leanline{IsJordan} over a pair of \psegment{}. %
+A \pface{} is isomorphic to a list of \face, having a constructor for the empty \pface, a constructor that raises a \face{} into a singleton \pface, and one that joins two values of type \pface{} into one. %
+\begin{leancode}
+structure Face : Type where
+  s1 : PolySegment
+  s2 : PolySegment
+  jordan : IsJordan s1 s2
 
-A TruncationOf an object is contructed recursively. The base case is
-that for any non-empty version of the object, the empty version is a
-TruncationOf it. So for the case of PolyVolumes, for any non-empty
-PolyVolume the empty PolyVolume is a TruncationOf it. Then, given two
-objects, the first of which is TruncationOf the second one, we have
-that the join of the first object with any third object is a
-TruncationOf the second one with the same third object (provided we
-can perform both joins, that is, their results are well-formed
-geometric objects).
+inductive PolyFace : Type where
+| f₀ : PolyFace
+| f₁ : Face → PolyFace
+| f₂ : PolyFace → PolyFace → PolyFace
+\end{leancode}
 
-Given two PolyVolumes \(q\) and \(p\) and a constructive proof that the
-\(q\) is a TruncationOf \(p\), we can derive Zolt's theorem by induction
-on the TruncationOf construction: in the base case, we have that \(q\)
-is the empty PolyVolume \(\varepsilon\), and so we use the
-\(\varepsilon_2\) rule to show that \(\varepsilon < p\). In the inductive
-case we have that \(p\) and \(q\) are actually \(p';r\) and \(q;r\), and we
-have a proof of \(q' < p'\). With this proof and a trivial proof that \(r
-\leq r\) we can invoke the \(lt_1\) rule to show that \(q';r < p';r\;_\square\)
+A \volume{} is a pair of \pface{} together with a proof that they form a
+closed volume. %
+For this, a closed volume is defined opaquely as a predicate \leanline{IsClosed} over a pair of \pface. %
+A \pvolume{} is isomorphic to a list of \volume, having a constructor for the empty \pvolume, a constructor that raises a \volume{} into a singleton \pvolume, and one that joins two values of type \pvolume{} into one. %
+\begin{leancode}
+structure Volume : Type where
+  vol1 : PolyFace
+  vol2 : PolyFace
+  closed : IsClosed vol1 vol2
+
+inductive PolyVolume where
+| v₀ : PolyVolume
+| v₁ : Volume → PolyVolume
+| v₂ : PolyVolume → PolyVolume → PolyVolume
+\end{leancode}
+
+\section{The \zp{} system}\label{sec:zp-system} %
+
+We can classify the rules of the \zp{} system in two groups: the ones related to the construction of geometrical objects, and the ones related to comparing them for size. %
+
+The first rules are implemented in Lean as typeclass, of which the types described in \cref{sec:geom-objects-lean} are instances. %
+\begin{leancode}
+class Zₚ (a : Type u) where
+  ε : a
+  cmp : a → a → Prop
+  join : (p : a) → (q : a) → cmp p q → a
+  NonEmpty : a → Prop
+\end{leancode}
+
+In Lean, typeclasses are used as a way to overload notation. %
+Using this case as an example, we may use \(\varepsilon\) to denote the empty geometric object of any type which is an instance of \zp{}, as we do in the deductive rules for \zp{}. %
+
+The attentive reader will have noticed that in \cref{sec:geom-objects-lean} we defined constructors such as \leanline{v₂ : PolyVolume → PolyVolume → PolyVolume} that may build invalid (not well-formed) geometric objects. %
+For a \pvolume{} to be well-formed when constructed from a pair of \pvolume, we need them to have an intersection forming a \face. %
+To enforce such well-formedness restrictions, the \zp{} typeclass defines the \leanline{cmp} predicate, that is used as an argument to the \leanline{join} function. %
+
+Further on, we we will also need a predicate establishing that the geometric object is not the empty one, so we add it here. %
+
+To illustration how this works in practice, below is the instantiation of \pvolume{} as part of the \zp{} typeclass: %
+\begin{leancode}
+opaque PolyVolume.HasFaceIntersection : PolyVolume → PolyVolume → Prop
+
+def PolyVolume.NonEmpty : PolyVolume → Prop
+| v₀ => False
+| v₁ _ => True
+| v₂ _ _ => True
+
+instance : Zₚ PolyVolume where
+  ε := PolyVolume.v₀
+  cmp := PolyVolume.HasFaceIntersection
+  join := λ p, v, _cmp => PolyVolume.v₂ p v
+  NonEmpty := PolyVolume.NonEmpty
+\end{leancode}
+As one can see, we need the auxiliary definition of the \leanline{HasFaceIntersection} predicate over a pair of \pvolume{} to be used as our \leanline{cmp} predicate for \pvolume. %
+To join two \pvolume{}s in one, we use the regular \leanline{v₂}, but the (otherwise unused) \leanline{_cmp} argument guarantees that the result is well-formed. %
+We also define the \leanline{NonEmpty} predicate for \pvolume{} in the obvious way. %
+
+The instantiations for the other geometrical objects is similarly made (with the appropriate predicates), but they are not necessary for the proof of the de Zolt theorem in \zp. %
+
+Now we need to define the rules for comparing \zp{} values. %
+\(<\) and \(\leq\) are defined inductively over pairs of \zp{} values: %
+\begin{leancode}
+mutual
+  variable {t} [Zₚ t]
+
+  inductive Zₚ.le : t → t → Prop where
+  | refl {p : t} : le p p
+  | le₁ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → le p₂ q₂
+        → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
+        → le (join p₁ p₂ pc) (join q₁ q₂ qc)
+
+  inductive Zₚ.lt : t → t → Prop
+  | ε₁ : ∀ {p q : t}, (pqc : cmp p q) → lt p (join p q pqc)
+  | ε₂ : ∀ {p q : t}, (pqc : cmp p q) → lt q (join p q pqc)
+  | lt₁ : ∀ {p₁ q₁ p₂ q₂ : t}, lt p₁ q₁ → le p₂ q₂
+        → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
+        → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
+  | lt₂ : ∀ {p₁ q₁ p₂ q₂ : t}, le p₁ q₁ → lt p₂ q₂
+        → (pc : cmp p₁ p₂) → (qc : cmp q₁ q₂)
+        → lt (join p₁ p₂ pc) (join q₁ q₂ qc)
+end
+\end{leancode}
+The constructors of the \leanline{le} (for \(\leq\)) and \leanline{lt} (for \(<\)) types correspond to the \zp{} deductive rules of the same name. %
+
+\section{The proof}\label{sec:de-zolt-theorem} %
+
+The final piece we need to prove the de Zolt theorem is the definition of a truncation of a geometric object (in Lean this means any value of a type which is an instance of the \zp{} typeclass). %
+We define truncation inductively in the following Lean code: %
+\begin{leancode}
+section Truncation
+variable {t} [Zₚ t]
+
+inductive Zₚ.TruncationOf : t → t → Prop where
+| t₀ {p : t} : NonEmpty p → TruncationOf ε p
+| t₁ {p q r : t} : (pr : cmp p r) → (qr : cmp q r)
+    → TruncationOf p q
+    → TruncationOf (join p r pr) (join q r qr)
+
+end Truncation
+\end{leancode}
+
+A \truncof{} value is thus contructed recursively. %
+The base case is that for any non-empty version of a geometric object, the empty object is a \truncof{} it. %
+So for the case of a \pvolume, for any non-empty \pvolume{} the empty \pvolume{} is a \truncof{} it. %
+For the inductive case, given three geometric objects, the first of which is a \truncof{} the second one, we have that the join of the first object with the third object is a \truncof{} the second one with the same third object. %
+This is only true provided we can perform both of these joins, that is, that their results are well-formed geometric objects; this is guaranteed by the two \leanline{cmp} arguments. %
+
+We are finally ready for the statement of the de Zolt theorem: %
+\begin{leancode}
+theorem PolyVolume.zolt {q p : PolyVolume}
+  (isTrunc : Zₚ.TruncationOf q p)
+  : Zₚ.lt q p
+\end{leancode}
+That is, if \(p, q\) are \pvolume, and \(q\) is a \truncof{} \(p\), we have that \(q < p\). %
+
+The proof is by induction on the \truncof{} construction: in the base case, we have that \(q\) is the empty \pvolume{} \(\varepsilon\), and so we use the
+\(\varepsilon_2\) rule to show that \(\varepsilon < p\). %
+In the inductive case we have that \(p\) and \(q\) are actually \(p';r\) (\leanline{join p' r}) and \(q;r\) (\leanline{join q r}), and we
+have a proof of \(q' < p'\). %
+With this proof and the trivial proof of \(r \leq r\) we can invoke the \(lt_1\) rule to show that \(q';r < p';r\;_\square\) %
+
+Or, in Lean: %
+
+\begin{leancode}
+theorem PolyVolume.zolt {q p : PolyVolume}
+  (isTrunc : Zₚ.TruncationOf q p)
+  : Zₚ.lt q p :=
+  match isTrunc with
+  | Zₚ.TruncationOf.t₀ _ =>
+      have pεcmp : Zₚ.cmp p v₀
+        := HasFaceIntersection_comm EmptyAlwaysHasFaceIntersection
+      (Eq.subst Zₚ.empty_right_join <| Zₚ.lt.ε₂ pεcmp)
+  | Zₚ.TruncationOf.t₁ (p := w) (q := u) (r := r) wrcmp urcmp qIsTruncOfp =>
+    have w_lt_u : Zₚ.lt w u := zolt qIsTruncOfp
+    have r_le_r : Zₚ.le r r := Zₚ.le.refl
+    Zₚ.lt.lt₁ w_lt_u r_le_r wrcmp urcmp
+\end{leancode}
 
 \end{document}
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
+%%% TeX-engine: xetex
+%%% TeX-command-extra-options: "-shell-escape"
+%%% fill-column: 100000
+%%% eval: (visual-line-mode 1)
 %%% End:
