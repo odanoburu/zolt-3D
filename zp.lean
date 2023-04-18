@@ -1,24 +1,3 @@
-section sandbox
-
-inductive AccTree : Nat → Type where
-| leaf : (n : Nat) → AccTree n
-| node : AccTree n → AccTree m → AccTree (Nat.add n m)
-
-def notLeaf : AccTree x → Bool
-| AccTree.leaf _ => False
-| AccTree.node _ _ => True
-
-def Nat.nonZero : Nat → Prop
-| 0 => False
-| _ => True
-
-instance : DecidablePred Nat.nonZero :=
-  λ n => match n with
-  | Nat.zero => isFalse (λ hnz => by trivial)
-  | Nat.succ _ => isTrue trivial
-
-end sandbox
-
 namespace ZpInd
 
 class Zₚ (a : Type u) where
@@ -51,12 +30,12 @@ structure Segment : Type where
   p2 : Point
   neq : p1 ≠ p2
 
-def Segment.invert : Segment → Segment
-| s => {p1 := s.p2, p2 := s.p1, neq := s.neq}
+-- def Segment.invert : Segment → Segment
+-- | s => {p1 := s.p2, p2 := s.p1, neq := s.neq}
 
-theorem Segment.invert_symm {s : Segment}
-  : invert (invert s) = s
-  := rfl
+-- theorem Segment.invert_symm {s : Segment}
+--   : invert (invert s) = s
+--   := rfl
 
 inductive PolySegment : Type where
 | s₀ : PolySegment
@@ -71,8 +50,8 @@ axiom NotCollinear_comm {ps₁ ps₂ : PolySegment}
 
 opaque PolySegment.HasPointIntersection : PolySegment → PolySegment → Prop
 
-axiom PolySegment.HasPointIntersection_comm : ∀ {ps₁ ps₂ : PolySegment}
-  , HasPointIntersection ps₁ ps₂ → HasPointIntersection ps₂ ps₁
+-- axiom PolySegment.HasPointIntersection_comm : ∀ {ps₁ ps₂ : PolySegment}
+--   , HasPointIntersection ps₁ ps₂ → HasPointIntersection ps₂ ps₁
 
 def PolySegment.left : PolySegment → PolySegment
 | s₀ => s₀
@@ -83,6 +62,7 @@ def PolySegment.right : PolySegment → PolySegment
 | s₀ => s₀
 | s₁ ps => s₁ ps
 | s₂ _ ps => ps
+
 def PolySegment.NonEmpty : PolySegment → Prop
 | s₀ => False
 | s₁ _ => True
@@ -93,10 +73,10 @@ def PolySegment.IsComposite : PolySegment → Prop
 | s₁ _ => False
 | s₂ _ _ => True
 
-def PolySegment.invert : PolySegment → PolySegment
-| s₀ => s₀
-| PolySegment.s₁ s => PolySegment.s₁ s
-| PolySegment.s₂ ps₁ ps₂ => PolySegment.s₂ ps₂ ps₁
+-- def PolySegment.invert : PolySegment → PolySegment
+-- | s₀ => s₀
+-- | PolySegment.s₁ s => PolySegment.s₁ s
+-- | PolySegment.s₂ ps₁ ps₂ => PolySegment.s₂ ps₂ ps₁
 
 def PolySegment.cmp : PolySegment → PolySegment → Prop
 | ps₁, ps₂ => NotCollinear ps₁ ps₂ ∧ HasPointIntersection ps₁ ps₂
@@ -116,9 +96,9 @@ instance : Zₚ PolySegment where
 
 opaque IsJordan : PolySegment → PolySegment → Prop
 
-axiom IsJordan_comm
-  : ∀ {ps₁ ps₂ : PolySegment}
-  , IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
+-- axiom IsJordan_comm
+--   : ∀ {ps₁ ps₂ : PolySegment}
+--   , IsJordan ps₁ ps₂ → IsJordan ps₂ ps₁
 
 -- couldn't a face just be a single polysegment that is a jordan
 -- curve?
@@ -128,6 +108,7 @@ structure Face : Type where
   jordan : IsJordan s1 s2
 
 inductive PolyFace : Type where
+| f₀ : PolyFace
 | f₁ : (f : Face) → PolyFace
 | f₂ : (pf pg : PolyFace) → PolyFace
 
@@ -137,10 +118,12 @@ axiom HasLineIntersection_comm {f g : PolyFace} :
   HasLineIntersection f g → HasLineIntersection g f
 
 def PolyFace.left : PolyFace → PolyFace
+| f₀ => f₀
 | f₁ f => f₁ f
 | PolyFace.f₂ ps _ => ps
 
 def PolyFace.right : PolyFace → PolyFace
+| f₀ => f₀
 | f₁ f => f₁ f
 | PolyFace.f₂ _ ps => ps
 
@@ -177,24 +160,24 @@ def PolyVolume.NonEmpty : PolyVolume → Prop
 | v₁ _ => True
 | v₂ _ _ => True
 
-instance : DecidablePred PolyVolume.IsComposite := λ v =>
-  match v with
-  | PolyVolume.v₀ => isFalse (λ hc => by trivial)
-  | PolyVolume.v₁ u => isFalse (λ hc => by trivial)
-  | PolyVolume.v₂ _ _ => isTrue trivial
+-- instance : DecidablePred PolyVolume.IsComposite := λ v =>
+--   match v with
+--   | PolyVolume.v₀ => isFalse (λ hc => by trivial)
+--   | PolyVolume.v₁ u => isFalse (λ hc => by trivial)
+--   | PolyVolume.v₂ _ _ => isTrue trivial
 
-def PolyVolume.left {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
-  := match pv with
-  | v₂ pv₁ _ => pv₁
+-- def PolyVolume.left {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
+--   := match pv with
+--   | v₂ pv₁ _ => pv₁
 
 def PolyVolume.left' : PolyVolume → PolyVolume
 | v₀ => v₀
 | v₁ v => v₁ v
 | v₂ v _ => v
 
-def PolyVolume.right {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
-  := match pv with
-  | v₂ _ pv₁ => pv₁
+-- def PolyVolume.right {pv : PolyVolume} (_ : IsComposite pv) : PolyVolume
+--   := match pv with
+--   | v₂ _ pv₁ => pv₁
 
 def PolyVolume.right' : PolyVolume → PolyVolume
 | v₀ => v₀
@@ -216,21 +199,6 @@ instance : Zₚ PolyVolume where
 
 section Truncation
 variable {t} [Zₚ t]
--- def PolyVolume.IsTruncationOf {p q : PolyVolume}
---   (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
---   : Prop
---   := match p with
---   | v₁ _ => False
---   | v₂ v u =>
---     match q with
---     | v₁ w => v = v₁ w ∨ u = v₁ w
---     | v₂ w x => (v = w ∧ IsTruncationOf (Zₚ.WellFormed_right wfp) /- u -/ (Zₚ.WellFormed_right wfq) /- x -/)
---                  ∨ (u = x ∧ IsTruncationOf (Zₚ.WellFormed_left wfp) /- v -/ (Zₚ.WellFormed_left wfq) /- w -/)
-
--- def PolyVolume.TruncationOf {p q : PolyVolume}
---   (wfp : Zₚ.WellFormed p) (wfq : Zₚ.WellFormed q)
---   (PolyVolume.IsTruncationOf wfp wfq)
---   : ()
 
 inductive Zₚ.TruncationOf : t → t → Prop where
 | t₀ {p : t} : NonEmpty p → TruncationOf ε p
