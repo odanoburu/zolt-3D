@@ -1,0 +1,74 @@
+% Created 2023-03-17 Fri 15:55
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{bruno cuconato}
+\date{\today}
+\title{}
+\hypersetup{
+ pdfauthor={bruno cuconato},
+ pdftitle={},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 28.2 (Org mode 9.5.5)},
+ pdflang={English}}
+\begin{document}
+We define Points as an opaque type, they are not explicitly described,
+and we can't ‘look inside’ them.
+
+With the exception of Points, in Lean we represent the geometric
+objects by their constructions (or deconstructions, depending on how
+you look at it).
+
+A pair of points form a Segment; in Lean, this is a structure
+containing the two points, together with a proof that they are
+different from other (i.e., not the same point). A PolySegment is
+isomorphic to a list of Segments, having a constructor for the empty
+PolySegment, a constructor that raises a Segment into a singleton
+PolySegment, and one that joins two PolySegments into one.
+
+A Face is a pair of PolySegments and a proof that they form a Jordan
+curve. A PolyFace is isomorphic to a list of Faces, having a
+constructor for the empty PolyFace, a constructor that raises a Face
+into a singleton PolyFace, and one that joins two PolyFaces into one.
+
+A Volume is a pair of PolyFaces together with a proof that they form a
+closed volume. A PolyVolume is isomorphic to a list of Volumes, having
+a constructor for the empty PolyVolume, a constructor that raises a
+Volume into a singleton PolyVolume, and one that joins two PolyVolumes
+into one.
+
+A TruncationOf an object is contructed recursively. The base case is
+that for any non-empty version of the object, the empty version is a
+TruncationOf it. So for the case of PolyVolumes, for any non-empty
+PolyVolume the empty PolyVolume is a TruncationOf it. Then, given two
+objects, the first of which is TruncationOf the second one, we have
+that the join of the first object with any third object is a
+TruncationOf the second one with the same third object (provided we
+can perform both joins, that is, their results are well-formed
+geometric objects).
+
+Given two PolyVolumes \(q\) and \(p\) and a constructive proof that the
+\(q\) is a TruncationOf \(p\), we can derive Zolt's theorem by induction
+on the TruncationOf construction: in the base case, we have that \(q\)
+is the empty PolyVolume \(\varepsilon\), and so we use the
+\(\varepsilon_2\) rule to show that \(\varepsilon < p\). In the inductive
+case we have that \(p\) and \(q\) are actually \(p';r\) and \(q;r\), and we
+have a proof of \(q' < p'\). With this proof and a trivial proof that \(r
+\leq r\) we can invoke the \(lt_1\) rule to show that \(q';r < p';r\;_\square\)
+
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
