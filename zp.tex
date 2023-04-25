@@ -63,7 +63,7 @@ structure Segment : Type where
 
 A pair of points form a \segment; in Lean, this is a structure
 containing the two points, together with a proof that they are
-different from other (i.e., not the same point). %
+different from each other (i.e., not the same point). %
 
 The type of \psegment{} is isomorphic to a list of \segment, having a constructor for the empty \psegment, a constructor that raises a \segment{} into a singleton \psegment, and one that joins two values of \psegment{} into one. %
 \begin{leancode}
@@ -121,7 +121,7 @@ class Zₚ (a : Type u) where
 In Lean, typeclasses are used as a way to overload notation. %
 Using this case as an example, we may use \(\varepsilon\) to denote the empty geometric object of any type which is an instance of \zp{}, as we do in the deductive rules for \zp{}. %
 
-The attentive reader will have noticed that in \cref{sec:geom-objects-lean} we defined constructors such as \leanline{v₂ : PolyVolume → PolyVolume → PolyVolume} that may build invalid (not well-formed) geometric objects. %
+The attentive reader will have noticed that in \cref{sec:geom-objects-lean} we defined constructors such as \leanline{PolyVolume.v₂} that may build invalid (not well-formed) geometric objects. %
 For a \pvolume{} to be well-formed when constructed from a pair of \pvolume, we need them to have an intersection forming a \face. %
 To enforce such well-formedness restrictions, the \zp{} typeclass defines the \leanline{cmp} predicate, that is used as an argument to the \leanline{join} function. %
 
@@ -129,7 +129,8 @@ Further on, we we will also need a predicate establishing that the geometric obj
 
 To illustration how this works in practice, below is the instantiation of \pvolume{} as part of the \zp{} typeclass: %
 \begin{leancode}
-opaque PolyVolume.HasFaceIntersection : PolyVolume → PolyVolume → Prop
+opaque PolyVolume.HasFaceIntersection
+  : PolyVolume → PolyVolume → Prop
 
 def PolyVolume.NonEmpty : PolyVolume → Prop
 | v₀ => False
