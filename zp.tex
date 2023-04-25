@@ -34,15 +34,30 @@
 \newcommand{\pvolume}{\mintinline{lean}{PolyVolume}} %
 \newcommand{\truncof}{\mintinline{lean}{TruncationOf}} %
 
+\usepackage{biblatex} %
+\addbibresource{logic.bib} %
+
 \usepackage{cleveref} %
 
 \newcommand{\zp}{\ensuremath{Z_{p}}}
 
-\date{\today}
-\title{de Zolt's theorem}
+\title{A Lean proof of de Zolt's theorem in higher dimension} %
+\author{Bruno Cuconato\thanks{I thank CNPq for the financial support (process number 157833/2019–4).} \and Edward Hermann Haeusler} %
+\date{Departamento de Informática, PUC-Rio\\ \{bclaro,hermann\}@inf.puc-rio.br}
 
 \begin{document}
 \maketitle %
+
+% \renewcommand{\abstractname}{} % So abstract doesn't show up
+% \begin{abstract}
+
+We present a proof of de Zolt's theorem in tridimensional space, formalized with the assistance of the Lean prover~\cite{demoura2015lean,demoura21lean4}. %
+While de Zolt's theorem is not provable in ZFC, it is provable in \(Z_{p}\), the system proposed by Giovannini~\textit{et al.}~in~\cite[§5]{giovannini2021postulado}. %
+The \(Z_{p}\) system is a continuation of the work by Giovannini~\textit{et al.}~in~\cite{giovannini2022zolt}, where an abstract algebraic proof of de Zolt's theorem for bidimensional space is presented. %
+
+This document is structured as follows: in \cref{sec:geom-objects-lean} we show how we define the geometric objects we will be working with in the Lean proof assistant; \cref{sec:zp-system} presents the \(Z_{p}\) system, as represented Lean; finally, \cref{sec:de-zolt-theorem} shows the Lean proof of de Zolt's theorem. %
+
+%\end{abstract} %
 
 \section{Geometric objects in Lean}\label{sec:geom-objects-lean} %
 
@@ -228,7 +243,10 @@ theorem PolyVolume.zolt {q p : PolyVolume}
     Zₚ.lt.lt₁ w_lt_u r_le_r wrcmp urcmp
 \end{leancode}
 
-\end{document}
+\printbibliography{}
+
+\end{document} %
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
