@@ -1,0 +1,3 @@
+# -*- mode:org -*-
+The Lean proof for de Zolt's theorem in 3D space, done in the (new) Zₚ
+system. See [[https://github.com/odanoburu/zolt-3D/blob/master/zp.pdf][zp.pdf]] for details.
