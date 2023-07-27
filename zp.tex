@@ -14,32 +14,21 @@
 \usepackage{amsmath} %
 \usepackage{amssymb} %
 
-% https://leanprover.github.io/lean4/doc/syntax_highlight_in_latex.html
-\usepackage{minted}
-% instruct minted to use our local theorem.py
-\newmintinline[lean]{lean4.py:Lean4Lexer -x}{bgcolor=white}
-\newminted[leancode]{lean4.py:Lean4Lexer -x}{fontsize=\footnotesize}
-\usemintedstyle{tango}  % a nice, colorful theme
-
 \usepackage{newunicodechar} %
 \newunicodechar{ₚ}{\ensuremath{_{p}}} %
-
-\newcommand{\leanline}[1]{\mintinline{lean}{#1}} %
-\newcommand{\point}{\mintinline{lean}{Point}} %
-\newcommand{\segment}{\mintinline{lean}{Segment}} %
-\newcommand{\psegment}{\mintinline{lean}{PolySegment}} %
-\newcommand{\face}{\mintinline{lean}{Face}} %
-\newcommand{\pface}{\mintinline{lean}{PolyFace}} %
-\newcommand{\volume}{\mintinline{lean}{Volume}} %
-\newcommand{\pvolume}{\mintinline{lean}{PolyVolume}} %
-\newcommand{\truncof}{\mintinline{lean}{TruncationOf}} %
+\usepackage{color}
+  \definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % red
+  \definecolor{tacticcolor}{rgb}{0.0, 0.1, 0.6}    % blue
+  \definecolor{commentcolor}{rgb}{0.4, 0.4, 0.4}   % grey
+  \definecolor{symbolcolor}{rgb}{0.0, 0.1, 0.6}    % blue
+  \definecolor{sortcolor}{rgb}{0.1, 0.5, 0.1}      % green
+  \definecolor{attributecolor}{rgb}{0.7, 0.1, 0.1} % red
+\usepackage{listings}
 
 \usepackage{biblatex} %
 \addbibresource{zolt.bib} %
 
 \usepackage{cleveref} %
-
-\newcommand{\zp}{\ensuremath{Z_{p}}}
 
 \title{A Lean proof of de Zolt's theorem in higher dimension} %
 \author{Bruno Cuconato\thanks{I thank CNPq for the financial support (process number 157833/2019–4).} \and Edward Hermann Haeusler} %
@@ -48,25 +37,58 @@
 \begin{document}
 \maketitle %
 
-% \renewcommand{\abstractname}{} % So abstract doesn't show up
-% \begin{abstract}
+{ %
+
+% listings
+\def\lstlanguagefiles{lstlean.tex}
+\newcommand{\leanline}[1]{\lstinline[language=lean]{#1}} %
+\lstnewenvironment{leancode}
+{\lstset{language=lean}}
+{} %
+
+% minted
+%\newcommand{\leanline}[1]{\mintinline{lean}{#1}} %
+
+% other
+\newcommand{\point}{\leanline{Point}} %
+\newcommand{\segment}{\leanline{Segment}} %
+\newcommand{\psegment}{\leanline{PolySegment}} %
+\newcommand{\face}{\leanline{Face}} %
+\newcommand{\pface}{\leanline{PolyFace}} %
+\newcommand{\volume}{\leanline{Volume}} %
+\newcommand{\pvolume}{\leanline{PolyVolume}} %
+\newcommand{\truncof}{\leanline{TruncationOf}} %
+\newcommand{\zp}{\ensuremath{Z_{p}}}
 
 We present a proof of de Zolt's theorem in tridimensional space, formalized with the assistance of the Lean prover~\cite{demoura2015lean,demoura21lean4}. %
-While de Zolt's theorem is not provable in ZFC, it is provable in \(Z_{p}\), the system proposed by Giovannini~\textit{et al.}~in~\cite[§5]{giovannini2021postulado}. %
+While de Zolt's theorem is not provable in ZFC, it is provable in \(Z_{p}\), the system proposed by Giovannini~\textit{et al.} in~\cite[§5]{giovannini2021postulado}. %
 The \(Z_{p}\) system is a continuation of the work by Giovannini~\textit{et al.}~in~\cite{giovannini2022zolt}, where an abstract algebraic proof of de Zolt's theorem for bidimensional space is presented. %
 
-This document is structured as follows: in \cref{sec:geom-objects-lean} we show how we define the geometric objects we will be working with in the Lean proof assistant; \cref{sec:zp-system} presents the \(Z_{p}\) system, as represented Lean; finally, \cref{sec:de-zolt-theorem} shows the Lean proof of de Zolt's theorem. %
+This document is structured as follows: we start by describing the Lean proof assistant, then we show how we define the geometric objects we will be working with in it; we then present the \(Z_{p}\) system as represented in Lean; finally, we show the Lean proof of de Zolt's theorem. %
 
-%\end{abstract} %
+\section{The Lean prover}\label{sec:about-lean} %
+
+Lean is a pure functional programming language designed to aid formal proofs. %
+It is based in type theory like other similar endeavours like Coq~\cite{coq2017} and Agda~\cite{norell2007agda-thesis}, more specifically the Calculus of Inductive Constructions (CIC) of Coquand and Huet~\cite{coquand1988calculus}. %
+
+What differentiates Lean from most other theorem provers is its sprawling mathematics library, mathlib~\cite{mathlib2020}. %
+It contains more than a hundred thousand theorems and about half as many definitions, totalling more than a million lines of code contributed by 300 people. %
+Besides the community-building efforts of mathematicians like Jeremy Avigad, Patrick Massot and Kevin Buzzard,  the reason for this success is believed to be Lean's extensibility, which has been increased even more in its fourth version~\cite{demoura21lean4} with the addition of hygienic macros~\cite{ullrich2020leanmacros} inspired by the Racket programming language. %
+
+Not only has Lean been at the frontier of machine-checked mathematical proofs (for a sample of recent developments, see~\cite{bhavik2023sharkovsky,defrutosfernandez2022adeles,dillies2022Szmeredi,baanen2023mordell,clune2023keller,doorn2023hprinciple}), but it has also been a platform for innovations in the field of programming languages, specially functional ones. %
+Lean 4 introduced an improvement over the traditional \textit{do} notation that is used as syntactic sugar for imperative-style programming~\cite{ullrich2022doUnchained}, allowing such features as local mutation, early return, and iteration. %
+None of these features are currently supported by the Haskell language, which introduced the idea. %
+Another contribution to language design was a new technique for reference counting in purely functional programming languages~\cite{Ullrich2019counting}. %
+Any reference-couting implementation makes a garbage collector unnecessary, and this one improves on them by reducing the number of reference updates and providing a new memory-reclaiming algorithm for nonshared values. %
 
 \section{Geometric objects in Lean}\label{sec:geom-objects-lean} %
 
 We take geometric points as given, so we define them as an opaque Lean type (henceforth written as \point). %
 This means they are not explicitly described, and we can't ‘look inside’ them. %
-
 \begin{leancode}
 structure Point : Type
 \end{leancode}
+
 The treatment given to \point{} is exceptional: all the other geometric objects are represented in Lean by their constructions (or deconstructions, depending on how you look at it). %
 
 \begin{leancode}
@@ -86,7 +108,9 @@ inductive PolySegment : Type where
 | s₀ : PolySegment
 | s₁ : Segment → PolySegment
 | s₂ : PolySegment → PolySegment → PolySegment
-\end{leancode}
+
+opaque IsJordan : PolySegment → PolySegment → Prop
+\end{leancode} %
 
 A \face{} is a pair of \psegment{} and a proof that they form a Jordan
 curve. %
@@ -102,6 +126,8 @@ inductive PolyFace : Type where
 | f₀ : PolyFace
 | f₁ : Face → PolyFace
 | f₂ : PolyFace → PolyFace → PolyFace
+
+opaque IsClosed : PolyFace → PolyFace → Prop
 \end{leancode}
 
 A \volume{} is a pair of \pface{} together with a proof that they form a
@@ -120,32 +146,42 @@ inductive PolyVolume where
 | v₂ : PolyVolume → PolyVolume → PolyVolume
 \end{leancode}
 
-\section{The \zp{} system}\label{sec:zp-system} %
+\section{The \zp{} system in Lean}\label{sec:zp-system} %
 
 We can classify the rules of the \zp{} system in two groups: the ones related to the construction of geometrical objects, and the ones related to comparing them for size. %
 
-The first rules are implemented in Lean as typeclass, of which the types described in \cref{sec:geom-objects-lean} are instances. %
+The first rules are implemented in Lean as a typeclass, of which the types described in~\ref{sec:geom-objects-lean} are instances. %
 \begin{leancode}
 class Zₚ (a : Type u) where
   ε : a
   cmp : a → a → Prop
   join : (p : a) → (q : a) → cmp p q → a
   NonEmpty : a → Prop
+
+axiom Zₚ.empty_left_join {t} [Zₚ t] {p : t} {εp : cmp ε p} : join ε p εp = p
+axiom Zₚ.empty_right_join {t} [Zₚ t] {p : t} {pε : cmp p ε} : join p ε pε = p
 \end{leancode}
 
 In Lean, typeclasses are used as a way to overload notation. %
 Using this case as an example, we may use \(\varepsilon\) to denote the empty geometric object of any type which is an instance of \zp{}, as we do in the deductive rules for \zp{}. %
 
-The attentive reader will have noticed that in \cref{sec:geom-objects-lean} we defined constructors such as \leanline{PolyVolume.v₂} that may build invalid (not well-formed) geometric objects. %
+The attentive reader will have noticed that in~\ref{sec:geom-objects-lean} we defined constructors such as \leanline{PolyVolume.v₂} that may build invalid (not well-formed) geometric objects. %
 For a \pvolume{} to be well-formed when constructed from a pair of \pvolume, we need them to have an intersection forming a \face. %
 To enforce such well-formedness restrictions, the \zp{} typeclass defines the \leanline{cmp} predicate, that is used as an argument to the \leanline{join} function. %
 
 Further on, we we will also need a predicate establishing that the geometric object is not the empty one, so we add it here. %
+We also state that joining a \zp{} object with the empty object results in the original object, a fact we will employ latter in the proof. %
 
-To illustration how this works in practice, below is the instantiation of \pvolume{} as part of the \zp{} typeclass: %
+To illustrate how this works in practice, below is the instantiation of \pvolume{} as part of the \zp{} typeclass: %
 \begin{leancode}
 opaque PolyVolume.HasFaceIntersection
   : PolyVolume → PolyVolume → Prop
+
+axiom PolyVolume.EmptyAlwaysHasFaceIntersection {v : PolyVolume} :
+  HasFaceIntersection v₀ v
+
+axiom PolyVolume.HasFaceIntersection_comm {v u : PolyVolume} :
+  HasFaceIntersection v u → HasFaceIntersection u v
 
 def PolyVolume.NonEmpty : PolyVolume → Prop
 | v₀ => False
@@ -155,14 +191,15 @@ def PolyVolume.NonEmpty : PolyVolume → Prop
 instance : Zₚ PolyVolume where
   ε := PolyVolume.v₀
   cmp := PolyVolume.HasFaceIntersection
-  join := λ p, v, _cmp => PolyVolume.v₂ p v
+  join := λ p v _cmp => PolyVolume.v₂ p v
   NonEmpty := PolyVolume.NonEmpty
 \end{leancode}
-As one can see, we need the auxiliary definition of the \leanline{HasFaceIntersection} predicate over a pair of \pvolume{} to be used as our \leanline{cmp} predicate for \pvolume. %
+As one can see, we need the auxiliary definition of the \leanline{HasFaceIntersection} predicate over a pair of \pvolume{} to be used as our \leanline{cmp} predicate for \pvolume{}. %
+We also state that having a face intersection is a commutative property, and that the empty \pvolume{} always has a face intersection with any other \pvolume{}. %
 To join two \pvolume{}s in one, we use the regular \leanline{v₂}, but the (otherwise unused) \leanline{_cmp} argument guarantees that the result is well-formed. %
 We also define the \leanline{NonEmpty} predicate for \pvolume{} in the obvious way. %
 
-The instantiations for the other geometrical objects is similarly made (with the appropriate predicates), but they are not necessary for the proof of the de Zolt theorem in \zp. %
+The instantiations for the other geometrical objects can be made similarly (with the appropriate predicates), but they are not necessary for the proof of the de Zolt theorem in \zp. %
 
 Now we need to define the rules for comparing \zp{} values. %
 \(<\) and \(\leq\) are defined inductively over pairs of \zp{} values: %
@@ -189,7 +226,7 @@ end
 \end{leancode}
 The constructors of the \leanline{le} (for \(\leq\)) and \leanline{lt} (for \(<\)) types correspond to the \zp{} deductive rules of the same name. %
 
-\section{The proof}\label{sec:de-zolt-theorem} %
+\section{The formal proof}\label{sec:de-zolt-theorem} %
 
 The final piece we need to prove the de Zolt theorem is the definition of a truncation of a geometric object (in Lean this means any value of a type which is an instance of the \zp{} typeclass). %
 We define truncation inductively in the following Lean code: %
@@ -241,7 +278,15 @@ theorem PolyVolume.zolt {q p : PolyVolume}
     have w_lt_u : Zₚ.lt w u := zolt qIsTruncOfp
     have r_le_r : Zₚ.le r r := Zₚ.le.refl
     Zₚ.lt.lt₁ w_lt_u r_le_r wrcmp urcmp
-\end{leancode}
+\end{leancode} %
+
+\section{The full proof}\label{sec:de-zolt-theorem} %
+
+For the reader's convenience, we reproduce below the full proof without the explanation text. %
+
+\lstinputlisting[language=lean]{zp.lean}
+
+}
 
 \printbibliography{}
 

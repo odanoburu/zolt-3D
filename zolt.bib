@@ -1,26 +1,169 @@
-@article{giovannini2021postulado,
-  title =        {Sobre el Postulado de De Zolt en tres dimensiones},
-  author =       {Giovannini, Eduardo Nicol{\'a}s and Lassalle
-                  Casanave, Abel and Haeusler, Edward H},
-  year =         2021,
-  journal =      {O que nos faz pensar},
-  volume =       29,
-  number =       49,
-  publisher =    {Pontif{\'\i}cia Universidade Cat{\'o}lica do Rio
-                  de Janeiro}
+@inproceedings{Ullrich2019counting,
+  author =       {Ullrich, Sebastian and de Moura, Leonardo},
+  year =         2019,
+  title =        {Counting Immutable Beans: Reference Counting
+                  Optimized for Purely Functional Programming [in
+                  press]},
+  eventtitle =   {31st Symposium on Implementation and Application
+                  of Functional Languages},
+  eventtitleaddon ={IFL 2019},
+  eventdate =    {2019-09-25/2019-09-27},
+  venue =        {Singapur, Singapur},
+  booktitle =    {31st Symposium on Implementation and Application
+                  of Functional Languages},
+  language =     {english},
+  documenturl =  {https://arxiv.org/pdf/1908.05647.pdf}
 }
 
-@article{giovannini2022zolt,
-  title =        {De ZOLT’S POSTULATE: AN ABSTRACT APPROACH},
-  volume =       15,
-  OPTDOI =          {10.1017/S1755020319000339},
-  number =       1,
-  journal =      {The Review of Symbolic Logic},
-  publisher =    {Cambridge University Press},
-  author =       {Giovannini, Eduardo N. and Haeusler, Edward H. and
-                  Lassalle-Casanave, Abel and Veloso, Paulo A. S.},
+@inproceedings{baanen2023mordell,
+  author =       {Baanen, Anne and Best, Alex J. and Coppola,
+                  Nirvana and Dahmen, Sander R.},
+  title =        {Formalized Class Group Computations and Integral
+                  Points on Mordell Elliptic Curves},
+  year =         2023,
+  isbn =         9798400700262,
+  publisher =    {Association for Computing Machinery},
+  address =      {New York, NY, USA},
+  url =          {https://doi.org/10.1145/3573105.3575682},
+  doi =          {10.1145/3573105.3575682},
+  abstract =     {Diophantine equations are a popular and active
+                  area of research in number theory. In this paper
+                  we consider Mordell equations, which are of the
+                  form y2=x3+d, where d is a (given) nonzero integer
+                  number and all solutions in integers x and y have
+                  to be determined. One non-elementary approach for
+                  this problem is the resolution via descent and
+                  class groups. Along these lines we formalized in
+                  Lean 3 the resolution of Mordell equations for
+                  several instances of d&lt;0. In order to achieve
+                  this, we needed to formalize several other
+                  theories from number theory that are interesting
+                  on their own as well, such as ideal norms,
+                  quadratic fields and rings, and explicit
+                  computations of the class number. Moreover, we
+                  introduced new computational tactics in order to
+                  carry out efficiently computations in quadratic
+                  rings and beyond.},
+  booktitle =    {Proceedings of the 12th ACM SIGPLAN International
+                  Conference on Certified Programs and Proofs},
+  pages =        {47–62},
+  numpages =     16,
+  keywords =     {algebraic number the- ory, formalized mathematics,
+                  Mathlib, Lean, tactics, Diophantine equations},
+  location =     {Boston, MA, USA},
+  series =       {CPP 2023}
+}
+
+@inproceedings{bhavik2023sharkovsky,
+  author =       {Mehta, Bhavik},
+  title =        {Formalising Sharkovsky’s Theorem (Proof Pearl)},
+  year =         2023,
+  isbn =         9798400700262,
+  publisher =    {Association for Computing Machinery},
+  address =      {New York, NY, USA},
+  url =          {https://doi.org/10.1145/3573105.3575689},
+  doi =          {10.1145/3573105.3575689},
+  abstract =     {Sharkovsky's theorem is a celebrated result by
+                  Ukrainian mathematician Oleksandr Sharkovsky in
+                  the theory of discrete dynamical systems,
+                  including the fact that if a continuous function
+                  of reals has a point of period 3, it must have
+                  points of any period. We formalise the proof in
+                  the Lean theorem prover, giving a characterisation
+                  of the possible sets of periods a continuous
+                  function on the real numbers may have. We further
+                  include the converse of the theorem, showing that
+                  the aforementioned sets are achievable under mild
+                  conditions.},
+  booktitle =    {Proceedings of the 12th ACM SIGPLAN International
+                  Conference on Certified Programs and Proofs},
+  pages =        {267–274},
+  numpages =     8,
+  keywords =     {formal math, proof assistant, real analysis, Lean},
+  location =     {Boston, MA, USA},
+  series =       {CPP 2023}
+}
+
+@inproceedings{clune2023keller,
+  author =       {Clune, Joshua},
+  title =        {A Formalized Reduction of Keller’s Conjecture},
+  year =         2023,
+  isbn =         9798400700262,
+  publisher =    {Association for Computing Machinery},
+  address =      {New York, NY, USA},
+  url =          {https://doi.org/10.1145/3573105.3575669},
+  doi =          {10.1145/3573105.3575669},
+  abstract =     {Keller’s conjecture in d dimensions states that
+                  there are no faceshare-free tilings of
+                  d-dimensional space by translates of a
+                  d-dimensional cube. In 2020, Brakensiek et al.
+                  resolved this 90-year-old conjecture by proving
+                  that the largest number of dimensions for which no
+                  faceshare-free tilings exist is 7. This result, as
+                  well as many others pertaining to Keller’s
+                  conjecture, critically relies on a reduction from
+                  Keller’s original conjecture to a statement about
+                  cliques in generalized Keller graphs. In this
+                  paper, we present a formalization of this
+                  reduction in the Lean 3 theorem prover.
+                  Additionally, we combine this formalized reduction
+                  with the verification of a large clique in the
+                  Keller graph G8 to obtain the first verified
+                  end-to-end proof that Keller’s conjecture is false
+                  in 8 dimensions.},
+  booktitle =    {Proceedings of the 12th ACM SIGPLAN International
+                  Conference on Certified Programs and Proofs},
+  pages =        {90–101},
+  numpages =     12,
+  keywords =     {Lean, Formal Verification, Keller's Conjecture,
+                  Interactive Theorem Proving},
+  location =     {Boston, MA, USA},
+  series =       {CPP 2023}
+}
+
+@Misc{coq2017,
+  author =       {The Coq Development Team},
+  title =        {The Coq Proof Assistant, version 8.7.0},
+  month =        10,
+  year =         2017,
+  publisher =    {Zenodo},
+  version =      {8.7.0},
+  doi =          {10.5281/zenodo.1028037},
+  url =          {https://doi.org/10.5281/zenodo.1028037}
+}
+
+@article{coquand1988calculus,
+  title =        {The Calculus of Constructions},
+  author =       {Coquand, Thierry and Huet, Gérard},
+  journal =      {Information and Computation},
+  volume =       76,
+  pages =        {95--120},
+  year =         1988
+}
+
+@InProceedings{defrutosfernandez2022adeles,
+  author =       {de Frutos-Fern\'{a}ndez, Mar{\'\i}a In\'{e}s},
+  title =        {{Formalizing the Ring of Ad\`{e}les of a Global
+                  Field}},
+  booktitle =    {13th International Conference on Interactive
+                  Theorem Proving (ITP 2022)},
+  pages =        {14:1--14:18},
+  series =       {Leibniz International Proceedings in Informatics
+                  (LIPIcs)},
+  ISBN =         {978-3-95977-252-5},
+  ISSN =         {1868-8969},
   year =         2022,
-  pages =        {197–224}
+  volume =       237,
+  editor =       {Andronick, June and de Moura, Leonardo},
+  publisher =    {Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r
+                  Informatik},
+  address =      {Dagstuhl, Germany},
+  URL =
+                  {https://drops.dagstuhl.de/opus/volltexte/2022/16723},
+  URN =          {urn:nbn:de:0030-drops-167232},
+  doi =          {10.4230/LIPIcs.ITP.2022.14},
+  annote =       {Keywords: formal math, algebraic number theory,
+                  class field theory, Lean, mathlib}
 }
 
 @inproceedings{demoura2015lean,
@@ -45,4 +188,185 @@
   address =      "Cham",
   pages =        "625--635",
   isbn =         "978-3-030-79876-5"
+}
+
+@InProceedings{dillies2022Szmeredi,
+  author =       {Dillies, Ya\"{e}l and Mehta, Bhavik},
+  title =        {{Formalising Szemer\'{e}di’s Regularity Lemma in
+                  Lean}},
+  booktitle =    {13th International Conference on Interactive
+                  Theorem Proving (ITP 2022)},
+  pages =        {9:1--9:19},
+  series =       {Leibniz International Proceedings in Informatics
+                  (LIPIcs)},
+  ISBN =         {978-3-95977-252-5},
+  ISSN =         {1868-8969},
+  year =         2022,
+  volume =       237,
+  editor =       {Andronick, June and de Moura, Leonardo},
+  publisher =    {Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r
+                  Informatik},
+  address =      {Dagstuhl, Germany},
+  URL =
+                  {https://drops.dagstuhl.de/opus/volltexte/2022/16718},
+  URN =          {urn:nbn:de:0030-drops-167185},
+  doi =          {10.4230/LIPIcs.ITP.2022.9},
+  annote =       {Keywords: Lean, formalisation, formal proof, graph
+                  theory, combinatorics, additive combinatorics,
+                  Szemer\'{e}di’s Regularity Lemma, Roth’s Theorem}
+}
+
+@inproceedings{doorn2023hprinciple,
+  author =       {van Doorn, Floris and Massot, Patrick and Nash,
+                  Oliver},
+  title =        {Formalising the H-Principle and Sphere Eversion},
+  year =         2023,
+  isbn =         9798400700262,
+  publisher =    {Association for Computing Machinery},
+  address =      {New York, NY, USA},
+  url =          {https://doi.org/10.1145/3573105.3575688},
+  doi =          {10.1145/3573105.3575688},
+  abstract =     {In differential topology and geometry, the
+                  h-principle is a property enjoyed by certain
+                  construction problems. Roughly speaking, it states
+                  that the only obstructions to the existence of a
+                  solution come from algebraic topology. We describe
+                  a formalisation in Lean of the local h-principle
+                  for first-order open and ample partial
+                  differential relations. This is a significant
+                  result in differential topology, originally proven
+                  by Gromov in 1973 as part of his sweeping effort
+                  which greatly generalised many previous
+                  flexibility results in geometry. In particular it
+                  reproves Smale’s celebrated sphere eversion
+                  theorem, a visually striking and counter-intuitive
+                  construction. Our formalisation uses
+                  Theilli\`{e}re’s implementation of convex
+                  integration from 2018. This paper reports on the
+                  first part of the sphere eversion project
+                  formalising the global version of the h-principle
+                  for open and ample first order differential
+                  relations, for maps between smooth manifolds. The
+                  local version for vector spaces described in this
+                  paper is the main ingredient of this proof, and is
+                  sufficient to prove the titular corollary of the
+                  project. From a broader perspective, the goal of
+                  this project is to show that one can formalise
+                  advanced mathematics with a strongly geometric
+                  flavour and not only algebraically-flavoured
+                  mathematics.},
+  booktitle =    {Proceedings of the 12th ACM SIGPLAN International
+                  Conference on Certified Programs and Proofs},
+  pages =        {121–134},
+  numpages =     14,
+  keywords =     {homotopy principle, differential topology, Lean,
+                  formalized mathematics, sphere eversion, convex
+                  integration},
+  location =     {Boston, MA, USA},
+  series =       {CPP 2023}
+}
+
+@article{giovannini2022zolt,
+  title =        {De ZOLT’S POSTULATE: AN ABSTRACT APPROACH},
+  volume =       15,
+  DOI =          {10.1017/S1755020319000339},
+  number =       1,
+  journal =      {The Review of Symbolic Logic},
+  publisher =    {Cambridge University Press},
+  author =       {Giovannini, Eduardo N. and Haeusler, Edward H. and
+                  Lassalle-Casanave, Abel and Veloso, Paulo A. S.},
+  year =         2022,
+  pages =        {197–224}
+}
+
+@inproceedings{mathlib2020,
+  author =       {The mathlib Community},
+  title =        {The Lean Mathematical Library},
+  year =         2020,
+  isbn =         9781450370974,
+  publisher =    {Association for Computing Machinery},
+  address =      {New York, NY, USA},
+  url =          {https://doi.org/10.1145/3372885.3373824},
+  doi =          {10.1145/3372885.3373824},
+  abstract =     {This paper describes mathlib, a community-driven
+                  effort to build a unified library of mathematics
+                  formalized in the Lean proof assistant. Among
+                  proof assistant libraries, it is distinguished by
+                  its dependently typed foundations, focus on
+                  classical mathematics, extensive hierarchy of
+                  structures, use of large- and small-scale
+                  automation, and distributed organization. We
+                  explain the architecture and design decisions of
+                  the library and the social organization that has
+                  led to its development.},
+  booktitle =    {Proceedings of the 9th ACM SIGPLAN International
+                  Conference on Certified Programs and Proofs},
+  pages =        {367–381},
+  numpages =     15,
+  keywords =     {Lean, formal library, formal proof, mathlib},
+  location =     {New Orleans, LA, USA},
+  series =       {CPP 2020}
+}
+
+1
+
+@article{giovannini2021postulado,
+  title =        {Sobre el Postulado de De Zolt en tres dimensiones},
+  author =       {Giovannini, Eduardo Nicol{\'a}s and Lassalle
+                  Casanave, Abel and Haeusler, Edward H},
+  year =         2021,
+  journal =      {O que nos faz pensar},
+  volume =       29,
+  number =       49,
+  publisher =    {Pontif{\'\i}cia Universidade Cat{\'o}lica do Rio
+                  de Janeiro}
+}
+
+@phdthesis{norell2007agda-thesis,
+  author =       {Ulf Norell},
+  title =        {Towards a practical programming language based on
+                  dependent type theory},
+  school =       {Department of Computer Science and Engineering,
+                  Chalmers University of Technology},
+  year =         2007,
+  month =        {9},
+  address =      {SE-412 96 G\"{o}teborg, Sweden}
+}
+
+@article{ullrich2020leanmacros,
+  author =       {Sebastian Ullrich and Leonardo de Moura},
+  title =        {Beyond Notations: Hygienic Macro Expansion for
+                  Theorem Proving Languages},
+  journal =      {CoRR},
+  volume =       {abs/2001.10490},
+  year =         2020,
+  url =          {https://arxiv.org/abs/2001.10490},
+  eprinttype =   {arXiv},
+  eprint =       {2001.10490},
+  timestamp =    {Thu, 29 Sep 2022 08:36:57 +0200},
+  biburl =
+                  {https://dblp.org/rec/journals/corr/abs-2001-10490.bib},
+  bibsource =    {dblp computer science bibliography,
+                  https://dblp.org}
+}
+
+@article{ullrich2022doUnchained,
+  author =       {Ullrich, Sebastian and de Moura, Leonardo},
+  title =        {‘Do’ Unchained: Embracing Local Imperativity in a
+                  Purely Functional Language (Functional Pearl)},
+  year =         2022,
+  issue_date =   {August 2022},
+  publisher =    {Association for Computing Machinery},
+  address =      {New York, NY, USA},
+  volume =       6,
+  number =       {ICFP},
+  url =          {https://doi.org/10.1145/3547640},
+  doi =          {10.1145/3547640},
+  journal =      {Proc. ACM Program. Lang.},
+  month =        {8},
+  articleno =    109,
+  numpages =     28,
+  keywords =     {Lean, functional programming, interactive theorem
+                  proving},
+  documenturl =  {https://leanprover.github.io/papers/do.pdf}
 }
